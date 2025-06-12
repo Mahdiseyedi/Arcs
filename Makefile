@@ -26,3 +26,11 @@ logs:
 
 logs-%:
 	docker compose logs -f $*
+
+# make redis-exec pass=pass
+redis-exec:
+ifdef pass
+	docker exec -it redis redis-cli -a $(pass)
+else
+	docker exec -it redis redis-cli
+endif

@@ -3,3 +3,6 @@
 3. adding job for sync balance cache layer with db
 4. publish job per dst to nats
 5. call ensure nats in entry point
+6. adding failed job to DLQ
+7. submit done process to databse
+8. clarify worker

@@ -1,4 +1,4 @@
-package producer
+package nats
 
 import (
 	"arcs/internal/configs"
@@ -7,13 +7,13 @@ import (
 	"log"
 )
 
-type NatsProducerClient struct {
+type Client struct {
 	cfg configs.Config
 	nc  *nats.Conn
 	js  nats.JetStreamContext
 }
 
-func NewNatsProducerClient(cfg configs.Config) *NatsProducerClient {
+func NewNatsClient(cfg configs.Config) *Client {
 	nc, err := nats.Connect(cfg.Nats.URL)
 	if err != nil {
 		log.Fatalf("[NATS] Failed to connect to NATS: [%v]", err)
@@ -24,20 +24,20 @@ func NewNatsProducerClient(cfg configs.Config) *NatsProducerClient {
 		log.Fatalf("[NATS] Failed to connect to jetstreams: [%v]", err)
 	}
 
-	return &NatsProducerClient{
+	return &Client{
 		cfg: cfg,
 		nc:  nc,
 		js:  js,
 	}
 }
 
-func (c *NatsProducerClient) EnsureStream() error {
+func (c *Client) EnsureStream() error {
 	//stream alrdy exits
 	_, err := c.js.StreamInfo(c.cfg.Nats.Stream)
 	if err == nil {
 		return nil
 	}
-	
+
 	_, err = c.js.AddStream(&nats.StreamConfig{
 		Name:     c.cfg.Nats.Stream,
 		Subjects: c.cfg.Nats.Subjects,
@@ -49,7 +49,7 @@ func (c *NatsProducerClient) EnsureStream() error {
 	return nil
 }
 
-func (c *NatsProducerClient) Publish(topic string, msg []byte) error {
+func (c *Client) Publish(topic string, msg []byte) error {
 	_, err := c.js.Publish(topic, msg)
 	if err != nil {
 		return fmt.Errorf("[NATS] Failed to publish message: %v", err)
@@ -57,6 +57,14 @@ func (c *NatsProducerClient) Publish(topic string, msg []byte) error {
 	return nil
 }
 
-func (c *NatsProducerClient) Close() {
+func (c *Client) Close() {
 	c.nc.Drain()
+}
+
+func (c *Client) Consume(topic string, handler nats.MsgHandler) error {
+	if _, err := c.js.QueueSubscribe(topic, c.cfg.Nats.Queue, handler, nats.ManualAck()); err != nil {
+		return fmt.Errorf("[NATS] Failed to consume msg: %v", err)
+	}
+
+	return nil
 }

@@ -1,7 +1,7 @@
 package order
 
 import (
-	"arcs/internal/clients/nats/producer"
+	"arcs/internal/clients/nats"
 	"arcs/internal/configs"
 	"arcs/internal/dto"
 	"arcs/internal/models"
@@ -16,27 +16,27 @@ import (
 )
 
 type Svc struct {
-	cfg       configs.Config
-	userSvc   *userSvc.Svc
-	orderRepo *order.Repository
-	producer  *producer.NatsProducerClient
+	cfg        configs.Config
+	userSvc    *userSvc.Svc
+	orderRepo  *order.Repository
+	natsClient *nats.Client
 }
 
 func NewOrderSvc(
 	cfg configs.Config,
 	userSvc *userSvc.Svc,
 	orderRepo *order.Repository,
-	producer *producer.NatsProducerClient,
+	natsClient *nats.Client,
 ) *Svc {
-	if err := producer.EnsureStream(); err != nil {
+	if err := natsClient.EnsureStream(); err != nil {
 		log.Fatal(err)
 	}
-	
+
 	return &Svc{
-		cfg:       cfg,
-		userSvc:   userSvc,
-		orderRepo: orderRepo,
-		producer:  producer,
+		cfg:        cfg,
+		userSvc:    userSvc,
+		orderRepo:  orderRepo,
+		natsClient: natsClient,
 	}
 }
 
@@ -84,8 +84,9 @@ func (s *Svc) RegisterOrder(ctx context.Context, req dto.OrderRequest) error {
 		//TODO - replace me with protobuf
 		byteSms, _ := json.Marshal(sms)
 
-		if err := s.producer.Publish(s.cfg.Nats.Subjects[0], byteSms); err != nil {
+		if err := s.natsClient.Publish(s.cfg.Nats.Subjects[0], byteSms); err != nil {
 			log.Printf("failed to register job for dst: [%v]", dest)
+			//TODO - adding failed job to DLQ
 		} else {
 			log.Printf("job registered for dst: [%v]", dest)
 		}

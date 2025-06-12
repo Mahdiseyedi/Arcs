@@ -35,3 +35,11 @@ func (s *Svc) CreateUser(ctx context.Context, balance int64) error {
 
 	return nil
 }
+
+func (s *Svc) Balance(ctx context.Context, uid string) (int64, error) {
+	return s.balanceRepo.Get(ctx, uid)
+}
+
+func (s *Svc) ChargeUser(ctx context.Context, uid string, amount int64) error {
+	return s.balanceRepo.Increase(ctx, uid, amount)
+}

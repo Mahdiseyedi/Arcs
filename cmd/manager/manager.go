@@ -8,6 +8,7 @@ import (
 	"arcs/internal/repository/user"
 	userSvc "arcs/internal/service/user"
 	"context"
+	"fmt"
 	"log"
 )
 
@@ -26,10 +27,22 @@ func main() {
 	userService := userSvc.NewUserSvc(userRepo, balanceRepo)
 	//TODO - remove me
 	ctx := context.Background()
-	var blc int64
-	blc = 200
+	dummyID := "8de01a14-9532-4ee1-af82-badb92dfe7da"
 
-	if err := userService.CreateUser(ctx, blc); err != nil {
+	v, err := userService.Balance(ctx, dummyID)
+	if err != nil {
 		log.Fatal(err)
 	}
+	fmt.Printf("before charge: [%v]\n", v)
+
+	if err := userService.ChargeUser(ctx, dummyID, 33); err != nil {
+		log.Fatal(err)
+	}
+
+	d, err := userService.Balance(ctx, dummyID)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("after charge: [%v]\n", d)
 }

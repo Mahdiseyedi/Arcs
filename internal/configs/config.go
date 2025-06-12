@@ -8,7 +8,7 @@ import (
 
 type Config struct {
 	Basic basic.Basic `koanf:"basic"`
-	DB    db.DB       `koanf:"db"`
+	DB    db.DB       `koanf:"database"`
 	Redis redis.Redis `koanf:"redis"`
 
 	//add more section here

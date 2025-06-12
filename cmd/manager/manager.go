@@ -2,6 +2,7 @@ package main
 
 import (
 	"arcs/internal/clients/db"
+	"arcs/internal/clients/nats/producer"
 	"arcs/internal/clients/redis"
 	"arcs/internal/configs"
 	"arcs/internal/dto"
@@ -21,6 +22,7 @@ func main() {
 	//clients
 	dbClient := db.NewDatabase(cfg)
 	redisClient := redis.NewRedisCli(cfg)
+	producerClient := producer.NewNatsProducerClient(cfg)
 
 	//repos
 	userRepo := user.NewUserRepository(dbClient)
@@ -29,11 +31,13 @@ func main() {
 
 	//services
 	userService := userSvc.NewUserSvc(userRepo, balanceRepo)
-	orderService := orderSvc.NewOrderSvc(cfg, userService, orderRepo)
+	orderService := orderSvc.NewOrderSvc(cfg, userService, orderRepo, producerClient)
 
 	//TODO - remove me
 	ctx := context.Background()
 	dummyID := "8de01a14-9532-4ee1-af82-badb92dfe7da"
+
+	defer producerClient.Close()
 
 	d, err := userService.Balance(ctx, dummyID)
 	if err != nil {

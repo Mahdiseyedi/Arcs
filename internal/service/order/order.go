@@ -1,12 +1,14 @@
 package order
 
 import (
+	"arcs/internal/clients/nats/producer"
 	"arcs/internal/configs"
 	"arcs/internal/dto"
 	"arcs/internal/models"
 	"arcs/internal/repository/order"
 	userSvc "arcs/internal/service/user"
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
 	"log"
@@ -17,17 +19,24 @@ type Svc struct {
 	cfg       configs.Config
 	userSvc   *userSvc.Svc
 	orderRepo *order.Repository
+	producer  *producer.NatsProducerClient
 }
 
 func NewOrderSvc(
 	cfg configs.Config,
 	userSvc *userSvc.Svc,
 	orderRepo *order.Repository,
+	producer *producer.NatsProducerClient,
 ) *Svc {
+	if err := producer.EnsureStream(); err != nil {
+		log.Fatal(err)
+	}
+	
 	return &Svc{
 		cfg:       cfg,
 		userSvc:   userSvc,
 		orderRepo: orderRepo,
+		producer:  producer,
 	}
 }
 
@@ -50,8 +59,9 @@ func (s *Svc) RegisterOrder(ctx context.Context, req dto.OrderRequest) error {
 	}
 
 	//register order to db
+	orderID := uuid.NewString()
 	if err := s.orderRepo.Submit(ctx, models.Order{
-		ID:           uuid.NewString(),
+		ID:           orderID,
 		CreatedAt:    time.Now(),
 		UserID:       req.UserID,
 		Content:      req.Content,
@@ -62,9 +72,23 @@ func (s *Svc) RegisterOrder(ctx context.Context, req dto.OrderRequest) error {
 		return fmt.Errorf("failed to submit order: %v", err)
 	}
 
-	//TODO - adding job for each dst to job queue
 	for _, dest := range req.Destinations {
-		log.Printf("job registered for dst: [%v]", dest)
+		sms := models.SMS{
+			//CreatedAt:   time.,
+			ID:          uuid.NewString(),
+			UserID:      req.UserID,
+			OrderID:     orderID,
+			Destination: dest,
+			//Status:      "",
+		}
+		//TODO - replace me with protobuf
+		byteSms, _ := json.Marshal(sms)
+
+		if err := s.producer.Publish(s.cfg.Nats.Subjects[0], byteSms); err != nil {
+			log.Printf("failed to register job for dst: [%v]", dest)
+		} else {
+			log.Printf("job registered for dst: [%v]", dest)
+		}
 	}
 
 	return nil

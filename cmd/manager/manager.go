@@ -6,8 +6,8 @@ import (
 	"arcs/internal/configs"
 	"arcs/internal/repository/balance"
 	"arcs/internal/repository/user"
+	userSvc "arcs/internal/service/user"
 	"context"
-	"github.com/google/uuid"
 	"log"
 )
 
@@ -22,20 +22,14 @@ func main() {
 	userRepo := user.NewUserRepository(dbClient)
 	balanceRepo := balance.NewBalanceRepository(redisClient)
 
+	//services
+	userService := userSvc.NewUserSvc(userRepo, balanceRepo)
 	//TODO - remove me
 	ctx := context.Background()
 	var blc int64
 	blc = 200
 
-	id, err := userRepo.CreateUser(ctx, uuid.NewString(), blc)
-	if err != nil {
+	if err := userService.CreateUser(ctx, blc); err != nil {
 		log.Fatal(err)
 	}
-
-	if err := balanceRepo.Set(ctx, id, blc); err != nil {
-		log.Fatal(err)
-	}
-
-	bc, err := balanceRepo.Get(ctx, id)
-	log.Printf("user: [%v], balance: [%v]", id, bc)
 }

@@ -43,3 +43,7 @@ func (s *Svc) Balance(ctx context.Context, uid string) (int64, error) {
 func (s *Svc) ChargeUser(ctx context.Context, uid string, amount int64) error {
 	return s.balanceRepo.Increase(ctx, uid, amount)
 }
+
+func (s *Svc) DecreaseBalance(ctx context.Context, uid string, amount int64) error {
+	return s.balanceRepo.Decrease(ctx, uid, amount)
+}

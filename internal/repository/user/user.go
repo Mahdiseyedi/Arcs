@@ -18,9 +18,15 @@ func NewUserRepository(
 	}
 }
 
-func (r *Repository) CreateUser(ctx context.Context, id string, balance float64) error {
-	return r.db.DB.WithContext(ctx).Create(&models.User{
+func (r *Repository) CreateUser(ctx context.Context, id string, balance int64) (string, error) {
+	user := models.User{
 		ID:      id,
 		Balance: balance,
-	}).Error
+	}
+
+	if err := r.db.DB.WithContext(ctx).Create(&user).Error; err != nil {
+		return "", err
+	}
+
+	return user.ID, nil
 }

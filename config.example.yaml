@@ -1,0 +1,12 @@
+basic:
+  port: 8088
+  environment: prod
+#  Environment: dev
+
+database:
+  connection_string: host=localhost port=5438 user=admin dbname=sms password=pass sslmode=disable
+
+redis:
+  addr: localhost:6380
+  password: pass
+  db: 0

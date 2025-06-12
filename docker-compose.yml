@@ -11,6 +11,7 @@ services:
       POSTGRESQL_DATABASE: arcs
     ports:
       - "5440:5432"
+
   redis:
     image: bitnami/redis:8.0.2
     hostname: redis

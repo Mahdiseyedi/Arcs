@@ -1,0 +1,28 @@
+# TODO - add volume for db
+# TODO - move envs to env file
+services:
+  arcs-db:
+    container_name: arcs-db
+    image: bitnami/postgresql:17.5.0
+    restart: always
+    environment:
+      POSTGRESQL_USERNAME: admin
+      POSTGRESQL_PASSWORD: pass
+      POSTGRESQL_DATABASE: arcs
+    ports:
+      - "5440:5432"
+  redis:
+    image: bitnami/redis:8.0.2
+    hostname: redis
+    restart: always
+    environment:
+      REDIS_PASSWORD: pass
+      ALLOW_EMPTY_PASSWORD: "no"
+    ports:
+      - "6380:6379"
+
+  nats:
+    image: docker.arvancloud.ir/nats:latest
+    command: ["-js"]
+    ports:
+      - "4222:4222"

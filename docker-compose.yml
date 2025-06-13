@@ -3,8 +3,8 @@
 services:
   arcs-db:
     container_name: arcs-db
-#    image: docker.arvancloud.ir/bitnami/postgresql:17.5.0
-    image: bitnami/postgresql:17.5.0
+    image: docker.arvancloud.ir/bitnami/postgresql:17.5.0
+#    image: bitnami/postgresql:17.5.0
     restart: always
     environment:
       POSTGRESQL_USERNAME: admin
@@ -14,8 +14,8 @@ services:
       - "5440:5432"
 
   redis:
-#    image: docker.arvancloud.ir/bitnami/redis:8.0.2
-    image: bitnami/redis:8.0.2
+    image: docker.arvancloud.ir/bitnami/redis:8.0.2
+#    image: bitnami/redis:8.0.2
     container_name: redis
     hostname: redis
     restart: always

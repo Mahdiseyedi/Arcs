@@ -1,6 +1,7 @@
 package user
 
 import (
+	"arcs/internal/dto"
 	"arcs/internal/repository/balance"
 	"arcs/internal/repository/user"
 	"context"
@@ -22,14 +23,14 @@ func NewUserSvc(
 	}
 }
 
-func (s *Svc) CreateUser(ctx context.Context, balance int64) error {
+func (s *Svc) CreateUser(ctx context.Context, req dto.CreateUserRequest) error {
 	uid := uuid.New().String()
 
-	if _, err := s.userRepo.CreateUser(ctx, uid, balance); err != nil {
+	if _, err := s.userRepo.CreateUser(ctx, uid, req.Balance); err != nil {
 		return err
 	}
 
-	if err := s.balanceRepo.Set(ctx, uid, balance); err != nil {
+	if err := s.balanceRepo.Set(ctx, uid, req.Balance); err != nil {
 		return err
 	}
 
@@ -40,8 +41,8 @@ func (s *Svc) Balance(ctx context.Context, uid string) (int64, error) {
 	return s.balanceRepo.Get(ctx, uid)
 }
 
-func (s *Svc) ChargeUser(ctx context.Context, uid string, amount int64) error {
-	return s.balanceRepo.Increase(ctx, uid, amount)
+func (s *Svc) ChargeUser(ctx context.Context, req dto.ChargeUserBalance) error {
+	return s.balanceRepo.Increase(ctx, req.UserId, req.Amount)
 }
 
 func (s *Svc) DecreaseBalance(ctx context.Context, uid string, amount int64) error {

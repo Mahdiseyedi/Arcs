@@ -1,0 +1,82 @@
+package user
+
+import (
+	"arcs/internal/dto"
+	"arcs/internal/service/user"
+	"arcs/internal/utils"
+	"arcs/internal/utils/errmsg"
+	validator "arcs/internal/validator/user"
+	"github.com/gin-gonic/gin"
+	"net/http"
+)
+
+type Handler struct {
+	validator validator.Validator
+	userSvc   *user.Svc
+}
+
+func NewUserHandler(
+	validator validator.Validator,
+	userSvc *user.Svc,
+) *Handler {
+	return &Handler{
+		validator: validator,
+		userSvc:   userSvc,
+	}
+}
+
+func (h *Handler) CreateUser(c *gin.Context) {
+	var req dto.CreateUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": errmsg.InvalidRequest})
+		return
+	}
+
+	if err := h.validator.CreateUser(req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err})
+		return
+	}
+
+	if err := h.userSvc.CreateUser(c.Request.Context(), req); err != nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": errmsg.FailedCreateUser})
+		return
+	}
+
+	c.Status(http.StatusCreated)
+}
+
+func (h *Handler) ChargeUser(c *gin.Context) {
+	var req dto.ChargeUserBalance
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": errmsg.InvalidRequest})
+		return
+	}
+
+	if err := h.validator.ChargeUser(req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err})
+		return
+	}
+
+	if err := h.userSvc.ChargeUser(c.Request.Context(), req); err != nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": err})
+		return
+	}
+
+	c.Status(http.StatusAccepted)
+}
+
+func (h *Handler) GetUserBalance(c *gin.Context) {
+	userID := c.Param("id")
+	if !utils.IsValidUUID(userID) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": errmsg.InvalidID})
+		return
+	}
+
+	balance, err := h.userSvc.Balance(c.Request.Context(), userID)
+	if err != nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": err})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"balance": balance})
+}

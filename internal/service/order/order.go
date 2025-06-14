@@ -68,7 +68,10 @@ func (s *Svc) RegisterOrder(ctx context.Context, req dto.OrderRequest) error {
 		Destinations: req.Destinations,
 	}); err != nil {
 		//refund balance for failer
-		_ = s.userSvc.ChargeUser(ctx, req.UserID, cost)
+		_ = s.userSvc.ChargeUser(ctx, dto.ChargeUserBalance{
+			UserId: req.UserID,
+			Amount: cost,
+		})
 		return fmt.Errorf("failed to submit order: %v", err)
 	}
 

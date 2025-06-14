@@ -39,7 +39,7 @@ func main() {
 
 	defer natsClient.Close()
 
-	userService.CreateUser(ctx, 200)
+	userService.CreateUser(ctx, dto.CreateUserRequest{Balance: 200})
 
 	d, err := userService.Balance(ctx, dummyID)
 	if err != nil {

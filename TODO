@@ -5,3 +5,4 @@
 7. submit done process to database
 8. clarify worker
 10. add validation for order register
+11. if redis down, its return 503 but create user in db, violate this

@@ -7,6 +7,7 @@ import (
 	"arcs/internal/models"
 	"arcs/internal/repository/order"
 	userSvc "arcs/internal/service/user"
+	"arcs/internal/utils/errmsg"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -44,13 +45,13 @@ func (s *Svc) RegisterOrder(ctx context.Context, req dto.OrderRequest) error {
 	//check user exists or not
 	balance, err := s.userSvc.Balance(ctx, req.UserID)
 	if err != nil {
-		return fmt.Errorf("not found any user: %w", err)
+		return err
 	}
 
 	cost := int64(len(req.Destinations) * s.cfg.Order.SMSCost)
 	//check for enough balance
 	if cost > balance {
-		return fmt.Errorf("not enough balance to register order")
+		return errmsg.InsufficientBalance
 	}
 
 	//lock enough balance to initiation

@@ -36,5 +36,5 @@ func (h *Handler) Check(c *gin.Context) {
 
 	//TODO - add more logic for health check here
 
-	c.Status(http.StatusOK)
+	c.Status(http.StatusNoContent)
 }

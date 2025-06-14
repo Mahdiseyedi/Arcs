@@ -5,6 +5,7 @@ import (
 	orderSvc "arcs/internal/service/order"
 	"arcs/internal/utils/errmsg"
 	"arcs/internal/validator/order"
+	"errors"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -33,7 +34,17 @@ func (h *Handler) CreateOrder(c *gin.Context) {
 	//TODO - add validation for order register
 
 	if err := h.orderSvc.RegisterOrder(c.Request.Context(), req); err != nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": err.Error()})
+		if errors.Is(err, errmsg.UserNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": errmsg.UserNotFound.Error()})
+			return
+		}
+
+		if errors.Is(err, errmsg.InsufficientBalance) {
+			c.JSON(http.StatusUnprocessableEntity, gin.H{"error": errmsg.InsufficientBalance.Error()})
+			return
+		}
+
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "failed to register order"})
 		return
 	}
 

@@ -1,7 +1,7 @@
 package dto
 
 type OrderRequest struct {
-	UserID       string   `json:"user_id"`
-	Content      string   `json:"content"`
-	Destinations []string `json:"destinations"`
+	UserID       string   `json:"user_id" binding:"required"`
+	Content      string   `json:"content" binding:"required"`
+	Destinations []string `json:"destinations" binding:"required"`
 }

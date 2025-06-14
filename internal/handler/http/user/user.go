@@ -64,7 +64,7 @@ func (h *Handler) ChargeUser(c *gin.Context) {
 			c.JSON(http.StatusNotFound, gin.H{"error": errmsg.UserNotFound.Error()})
 			return
 		}
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": err.Error()})
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "failed to charge user balance"})
 		return
 	}
 
@@ -84,7 +84,7 @@ func (h *Handler) GetUserBalance(c *gin.Context) {
 			c.JSON(http.StatusNotFound, gin.H{"error": errmsg.UserNotFound.Error()})
 			return
 		}
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": err.Error()})
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "failed to retrieve user balance"})
 		return
 	}
 

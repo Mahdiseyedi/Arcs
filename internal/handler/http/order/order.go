@@ -30,6 +30,8 @@ func (h *Handler) CreateOrder(c *gin.Context) {
 		return
 	}
 
+	//TODO - add validation for order register
+
 	if err := h.orderSvc.RegisterOrder(c.Request.Context(), req); err != nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": err.Error()})
 		return

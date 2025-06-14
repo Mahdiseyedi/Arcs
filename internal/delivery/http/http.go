@@ -38,15 +38,21 @@ func (s *Server) Run() {
 	//health
 	r.GET("/health", s.heathHandler.Check)
 
-	//user
-	r.POST("api/v1/user", s.userHandler.CreateUser)
-	r.POST("api/v1/user/charge", s.userHandler.ChargeUser)
-	r.GET("/api/v1/user/balance/:id", s.userHandler.GetUserBalance)
+	//api version 1
+	api := r.Group("/api/v1")
+	{
+		u := api.Group("/user")
+		{
+			u.POST("/", s.userHandler.CreateUser)
+			u.POST("/charge", s.userHandler.ChargeUser)
+			u.GET("/balance/:id", s.userHandler.GetUserBalance)
+		}
 
-	//order
-	r.POST("/api/v1/order", s.orderHandler.CreateOrder)
-
-	//add more routes here
+		o := api.Group("/order")
+		{
+			o.POST("/", s.orderHandler.CreateOrder)
+		}
+	}
 
 	port := fmt.Sprintf(":%s", s.cfg.Basic.Port)
 	if err := r.Run(port); err != nil {

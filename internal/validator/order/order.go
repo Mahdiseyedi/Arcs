@@ -9,7 +9,7 @@ import (
 type Validator struct {
 }
 
-func newOrderValidator() *Validator {
+func NewOrderValidator() *Validator {
 	return &Validator{}
 }
 

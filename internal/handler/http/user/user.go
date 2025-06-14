@@ -11,12 +11,12 @@ import (
 )
 
 type Handler struct {
-	validator validator.Validator
+	validator *validator.Validator
 	userSvc   *user.Svc
 }
 
 func NewUserHandler(
-	validator validator.Validator,
+	validator *validator.Validator,
 	userSvc *user.Svc,
 ) *Handler {
 	return &Handler{
@@ -28,7 +28,7 @@ func NewUserHandler(
 func (h *Handler) CreateUser(c *gin.Context) {
 	var req dto.CreateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": errmsg.InvalidRequest})
+		c.JSON(http.StatusBadRequest, gin.H{"error": errmsg.InvalidRequest.Error()})
 		return
 	}
 
@@ -48,7 +48,7 @@ func (h *Handler) CreateUser(c *gin.Context) {
 func (h *Handler) ChargeUser(c *gin.Context) {
 	var req dto.ChargeUserBalance
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": errmsg.InvalidRequest})
+		c.JSON(http.StatusBadRequest, gin.H{"error": errmsg.InvalidRequest.Error()})
 		return
 	}
 
@@ -68,7 +68,7 @@ func (h *Handler) ChargeUser(c *gin.Context) {
 func (h *Handler) GetUserBalance(c *gin.Context) {
 	userID := c.Param("id")
 	if !utils.IsValidUUID(userID) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": errmsg.InvalidID})
+		c.JSON(http.StatusBadRequest, gin.H{"error": errmsg.InvalidID.Error()})
 		return
 	}
 

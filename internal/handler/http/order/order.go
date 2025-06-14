@@ -10,13 +10,16 @@ import (
 )
 
 type Handler struct {
-	order.Validator
-	orderSvc *orderSvc.Svc
+	validator *order.Validator
+	orderSvc  *orderSvc.Svc
 }
 
-func NewOrderHandler(orderSvc *orderSvc.Svc) *Handler {
+func NewOrderHandler(
+	validator *order.Validator,
+	svc *orderSvc.Svc) *Handler {
 	return &Handler{
-		orderSvc: orderSvc,
+		validator: validator,
+		orderSvc:  svc,
 	}
 }
 

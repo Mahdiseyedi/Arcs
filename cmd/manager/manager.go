@@ -5,49 +5,71 @@ import (
 	"arcs/internal/clients/nats"
 	"arcs/internal/clients/redis"
 	"arcs/internal/configs"
+	"arcs/internal/delivery/http"
 	"arcs/internal/dto"
-	"arcs/internal/repository/balance"
-	"arcs/internal/repository/order"
-	"arcs/internal/repository/user"
-	orderSvc "arcs/internal/service/order"
-	userSvc "arcs/internal/service/user"
+	"arcs/internal/handler/http/healthcheck"
+	orderHandler "arcs/internal/handler/http/order"
+	userHandler "arcs/internal/handler/http/user"
+	balanceRepository "arcs/internal/repository/balance"
+	orderRepository "arcs/internal/repository/order"
+	userRepository "arcs/internal/repository/user"
+	orderService "arcs/internal/service/order"
+	userService "arcs/internal/service/user"
+	orderValidator "arcs/internal/validator/order"
+	userValidator "arcs/internal/validator/user"
 	"context"
 	"fmt"
 	"log"
+	"time"
 )
 
 func main() {
 	cfg := configs.Load("../../config.yaml")
 
 	//clients
-	dbClient := db.NewDatabase(cfg)
-	redisClient := redis.NewRedisCli(cfg)
-	natsClient := nats.NewNatsClient(cfg)
+	dbCli := db.NewDatabase(cfg)
+	redisCli := redis.NewRedisCli(cfg)
+	natsCli := nats.NewNatsClient(cfg)
 
 	//repos
-	userRepo := user.NewUserRepository(dbClient)
-	balanceRepo := balance.NewBalanceRepository(redisClient)
-	orderRepo := order.NewOrderRepository(dbClient)
+	userRepo := userRepository.NewUserRepository(dbCli)
+	balanceRepo := balanceRepository.NewBalanceRepository(redisCli)
+	orderRepo := orderRepository.NewOrderRepository(dbCli)
 
 	//services
-	userService := userSvc.NewUserSvc(userRepo, balanceRepo)
-	orderService := orderSvc.NewOrderSvc(cfg, userService, orderRepo, natsClient)
+	userSvc := userService.NewUserSvc(userRepo, balanceRepo)
+	orderSvc := orderService.NewOrderSvc(cfg, userSvc, orderRepo, natsCli)
+
+	//validator
+	userVal := userValidator.NewUserValidator()
+	orderVal := orderValidator.NewOrderValidator()
+
+	//handler
+	healthHandle := healthcheck.NewHealthcheckHandler()
+	userHandle := userHandler.NewUserHandler(userVal, userSvc)
+	orderHandle := orderHandler.NewOrderHandler(orderVal, orderSvc)
+
+	server := http.NewServer(cfg, healthHandle, userHandle, orderHandle)
+
+	server.Run()
+
+	time.Sleep(time.Minute * 100)
 
 	//TODO - remove me
 	ctx := context.Background()
 	dummyID := "01c0cad0-ebea-43ee-a92f-3230d00b4f0e"
 
-	defer natsClient.Close()
+	defer natsCli.Close()
 
-	userService.CreateUser(ctx, dto.CreateUserRequest{Balance: 200})
+	userSvc.CreateUser(ctx, dto.CreateUserRequest{Balance: 200})
 
-	d, err := userService.Balance(ctx, dummyID)
+	d, err := userSvc.Balance(ctx, dummyID)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("before order Balance: ", d)
 
-	if err := orderService.RegisterOrder(ctx, dto.OrderRequest{
+	if err := orderSvc.RegisterOrder(ctx, dto.OrderRequest{
 		UserID:  dummyID,
 		Content: "hi guys",
 		Destinations: []string{
@@ -64,7 +86,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	t, err := userService.Balance(ctx, dummyID)
+	t, err := userSvc.Balance(ctx, dummyID)
 	if err != nil {
 		log.Fatal(err)
 	}

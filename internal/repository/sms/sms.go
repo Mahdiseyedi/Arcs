@@ -31,20 +31,30 @@ func (r *Repository) CreateSMSBatch(ctx context.Context, smss []models.SMS) erro
 	return r.db.DB.WithContext(ctx).CreateInBatches(&smss, r.cfg.Basic.SMSBatchSize).Error
 }
 
-func (r *Repository) UpdateStatus(ctx context.Context, smsID, status string) error {
+func (r *Repository) Update(ctx context.Context, smss []models.SMS) error {
+	if len(smss) == 0 {
+		return nil
+	}
+
+	var ids []string
+	for _, sms := range smss {
+		ids = append(ids, sms.ID)
+	}
+
 	return r.db.DB.WithContext(ctx).
 		Model(&models.SMS{}).
-		Where("id = ?", smsID).
-		Update("status", status).Error
+		Where("id IN ?", ids).
+		Update("status", consts.PublishedStatus).Error
 }
 
 func (r *Repository) ListPending(ctx context.Context) ([]models.SMS, error) {
 	var smss []models.SMS
 	if err := r.db.DB.WithContext(ctx).
 		Where("status = ?", consts.PendingStatus).
+		Preload("Order").
 		Find(&smss).Error; err != nil {
 		return nil, err
 	}
-
+	
 	return smss, nil
 }

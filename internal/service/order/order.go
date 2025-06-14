@@ -6,7 +6,9 @@ import (
 	"arcs/internal/dto"
 	"arcs/internal/models"
 	"arcs/internal/repository/order"
+	"arcs/internal/repository/sms"
 	userSvc "arcs/internal/service/user"
+	consts "arcs/internal/utils/const"
 	"arcs/internal/utils/errmsg"
 	"context"
 	"encoding/json"
@@ -20,6 +22,7 @@ type Svc struct {
 	cfg        configs.Config
 	userSvc    *userSvc.Svc
 	orderRepo  *order.Repository
+	smsRepo    *sms.Repository
 	natsClient *nats.Client
 }
 
@@ -27,16 +30,14 @@ func NewOrderSvc(
 	cfg configs.Config,
 	userSvc *userSvc.Svc,
 	orderRepo *order.Repository,
+	smsRepo *sms.Repository,
 	natsClient *nats.Client,
 ) *Svc {
-	if err := natsClient.EnsureStream(); err != nil {
-		log.Fatal(err)
-	}
-
 	return &Svc{
 		cfg:        cfg,
 		userSvc:    userSvc,
 		orderRepo:  orderRepo,
+		smsRepo:    smsRepo,
 		natsClient: natsClient,
 	}
 }
@@ -75,24 +76,74 @@ func (s *Svc) RegisterOrder(ctx context.Context, req dto.OrderRequest) error {
 		return fmt.Errorf("failed to submit order: %v", err)
 	}
 
+	var smsList []models.SMS
 	for _, dest := range req.Destinations {
-		sms := models.SMS{
-			//CreatedAt:   time.,
+		smsList = append(smsList, models.SMS{
 			ID:          uuid.NewString(),
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now(),
 			OrderID:     orderID,
 			Destination: dest,
-			//Status:      "",
-		}
+		})
+	}
+
+	s.publish(ctx, smsList...)
+
+	return nil
+}
+
+func (s *Svc) publish(ctx context.Context, smss ...models.SMS) {
+	_ = s.natsClient.EnsureStream()
+
+	var publishedSms []models.SMS
+	for _, sms := range smss {
 		//TODO - replace me with protobuf
 		byteSms, _ := json.Marshal(sms)
 
 		if err := s.natsClient.Publish(s.cfg.Nats.Subjects[0], byteSms); err != nil {
-			log.Printf("failed to register job for dst: [%v]", dest)
-			//TODO - adding failed job to DLQ
+			log.Printf("failed to register job for dst: [%v]", sms)
+			sms.Status = consts.PendingStatus
 		} else {
-			log.Printf("job registered for dst: [%v]", dest)
+			log.Printf("job registered for dst: [%v]", sms)
+			sms.Status = consts.PublishedStatus
+		}
+
+		publishedSms = append(publishedSms, sms)
+	}
+
+	_ = s.smsRepo.CreateSMSBatch(ctx, publishedSms)
+
+}
+
+func (s *Svc) RecoverUnPblishSMS(ctx context.Context) error {
+	smss, err := s.smsRepo.ListPending(ctx)
+	if err != nil {
+		return err
+	}
+
+	s.rePublish(ctx, smss...)
+
+	return nil
+}
+
+func (s *Svc) rePublish(ctx context.Context, smss ...models.SMS) {
+	_ = s.natsClient.EnsureStream()
+
+	var publishedSms []models.SMS
+
+	for _, sms := range smss {
+		//TODO - replace me with protobuf
+		byteSms, _ := json.Marshal(sms)
+
+		if err := s.natsClient.Publish(s.cfg.Nats.Subjects[0], byteSms); err != nil {
+			log.Printf("failed to register job for dst: [%v]", sms)
+		} else {
+			log.Printf("job registered for dst: [%v]", sms)
+			publishedSms = append(publishedSms, sms)
 		}
 	}
 
-	return nil
+	if len(publishedSms) > 0 {
+		_ = s.smsRepo.Update(ctx, publishedSms)
+	}
 }

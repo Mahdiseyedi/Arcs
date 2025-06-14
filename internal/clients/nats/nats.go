@@ -39,8 +39,10 @@ func (c *Client) EnsureStream() error {
 	}
 
 	_, err = c.js.AddStream(&nats.StreamConfig{
-		Name:     c.cfg.Nats.Stream,
-		Subjects: c.cfg.Nats.Subjects,
+		Name:      c.cfg.Nats.Stream,
+		Subjects:  c.cfg.Nats.Subjects,
+		Retention: nats.WorkQueuePolicy,
+		Storage:   nats.FileStorage,
 	})
 	if err != nil {
 		return fmt.Errorf("[NATS] Failed to create stream [%s]: %v", c.cfg.Nats.Stream, err)

@@ -12,10 +12,12 @@ func main() {
 	cfg := configs.Load("../../worker-config.yaml")
 
 	natsClient := natsCli.NewNatsClient(cfg)
+	_ = natsClient.EnsureStream()
 
 	for {
 		if err := natsClient.Consume(cfg.Nats.Subjects[0], createMessageHandler("1")); err != nil {
 			log.Printf("[CONSUMER] Failed to consume message: %v", err)
+			time.Sleep(1 * time.Second)
 		}
 	}
 }

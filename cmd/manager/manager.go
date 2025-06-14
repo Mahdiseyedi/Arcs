@@ -12,12 +12,14 @@ import (
 	"arcs/internal/jobs"
 	balanceRepository "arcs/internal/repository/balance"
 	orderRepository "arcs/internal/repository/order"
+	smsRepository "arcs/internal/repository/sms"
 	userRepository "arcs/internal/repository/user"
 	"arcs/internal/service/health"
 	orderService "arcs/internal/service/order"
 	userService "arcs/internal/service/user"
 	orderValidator "arcs/internal/validator/order"
 	userValidator "arcs/internal/validator/user"
+	"context"
 	"fmt"
 	"log"
 )
@@ -36,10 +38,11 @@ func main() {
 	userRepo := userRepository.NewUserRepository(dbCli)
 	balanceRepo := balanceRepository.NewBalanceRepository(redisCli)
 	orderRepo := orderRepository.NewOrderRepository(dbCli)
+	smsRepo := smsRepository.NewSMSRepository(cfg, dbCli)
 
 	//services
 	userSvc := userService.NewUserSvc(userRepo, balanceRepo)
-	orderSvc := orderService.NewOrderSvc(cfg, userSvc, orderRepo, natsCli)
+	orderSvc := orderService.NewOrderSvc(cfg, userSvc, orderRepo, smsRepo, natsCli)
 	healthSvc := health.NewHealthSvc(dbCli.DB, redisCli.Client, natsCli)
 
 	//validator
@@ -54,13 +57,13 @@ func main() {
 	//jobs
 	//TODO - replace me with config value
 	crn.C.AddFunc(fmt.Sprintf("@every %ds", 10), func() {
-		//orderSvc.RetryPendingOrders()
+		orderSvc.RecoverUnPblishSMS(context.Background())
 		log.Println("retry for pending jobs...")
 	})
-	
+
 	//delivery
 	server := http.NewServer(cfg, healthHandle, userHandle, orderHandle)
 
-	server.Run()
 	crn.Start()
+	server.Run()
 }

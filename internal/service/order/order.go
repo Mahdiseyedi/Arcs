@@ -62,11 +62,10 @@ func (s *Svc) RegisterOrder(ctx context.Context, req dto.OrderRequest) error {
 	//register order to db
 	orderID := uuid.NewString()
 	if err := s.orderRepo.Submit(ctx, models.Order{
-		ID:           orderID,
-		CreatedAt:    time.Now(),
-		UserID:       req.UserID,
-		Content:      req.Content,
-		Destinations: req.Destinations,
+		ID:        orderID,
+		CreatedAt: time.Now(),
+		UserID:    req.UserID,
+		Content:   req.Content,
 	}); err != nil {
 		//refund balance for failure
 		_ = s.userSvc.ChargeUser(ctx, dto.ChargeUserBalance{
@@ -80,7 +79,6 @@ func (s *Svc) RegisterOrder(ctx context.Context, req dto.OrderRequest) error {
 		sms := models.SMS{
 			//CreatedAt:   time.,
 			ID:          uuid.NewString(),
-			UserID:      req.UserID,
 			OrderID:     orderID,
 			Destination: dest,
 			//Status:      "",

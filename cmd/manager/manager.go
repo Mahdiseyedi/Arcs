@@ -19,6 +19,7 @@ import (
 	orderValidator "arcs/internal/validator/order"
 	userValidator "arcs/internal/validator/user"
 	"fmt"
+	"log"
 )
 
 func main() {
@@ -51,9 +52,12 @@ func main() {
 	orderHandle := orderHandler.NewOrderHandler(orderVal, orderSvc)
 
 	//jobs
-	crn.C.AddFunc(fmt.Sprintf("@every %ds"), func() {
-		orderSvc.RetryPendingOrders()
+	//TODO - replace me with config value
+	crn.C.AddFunc(fmt.Sprintf("@every %ds", 10), func() {
+		//orderSvc.RetryPendingOrders()
+		log.Println("retry for pending jobs...")
 	})
+	
 	//delivery
 	server := http.NewServer(cfg, healthHandle, userHandle, orderHandle)
 

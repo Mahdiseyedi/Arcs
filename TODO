@@ -6,3 +6,4 @@
 6. adding failed job to DLQ
 7. submit done process to databse
 8. clarify worker
+9. adding validation for content and destinations

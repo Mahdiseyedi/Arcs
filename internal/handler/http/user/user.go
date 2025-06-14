@@ -33,7 +33,7 @@ func (h *Handler) CreateUser(c *gin.Context) {
 	}
 
 	if err := h.validator.CreateUser(req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -58,7 +58,7 @@ func (h *Handler) ChargeUser(c *gin.Context) {
 	}
 
 	if err := h.userSvc.ChargeUser(c.Request.Context(), req); err != nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": err})
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -74,7 +74,7 @@ func (h *Handler) GetUserBalance(c *gin.Context) {
 
 	balance, err := h.userSvc.Balance(c.Request.Context(), userID)
 	if err != nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": err})
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": err.Error()})
 		return
 	}
 

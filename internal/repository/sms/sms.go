@@ -2,21 +2,33 @@ package sms
 
 import (
 	"arcs/internal/clients/db"
+	"arcs/internal/configs"
 	"arcs/internal/models"
 	consts "arcs/internal/utils/const"
 	"context"
 )
 
 type Repository struct {
-	db *db.Database
+	cfg configs.Config
+	db  *db.Database
 }
 
 func NewSMSRepository(
+	cfg configs.Config,
 	db *db.Database,
 ) *Repository {
 	return &Repository{
-		db: db,
+		cfg: cfg,
+		db:  db,
 	}
+}
+
+func (r *Repository) Create(ctx context.Context, sms models.SMS) error {
+	return r.db.DB.WithContext(ctx).Create(&sms).Error
+}
+
+func (r *Repository) CreateSMSBatch(ctx context.Context, smss []models.SMS) error {
+	return r.db.DB.WithContext(ctx).CreateInBatches(&smss, r.cfg.Basic.SMSBatchSize).Error
 }
 
 func (r *Repository) UpdateStatus(ctx context.Context, smsID, status string) error {

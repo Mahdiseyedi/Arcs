@@ -4,9 +4,19 @@ basic:
 #  Environment: dev
 
 database:
-  connection_string: host=localhost port=5438 user=admin dbname=sms password=pass sslmode=disable
+  connection_string: host=localhost port=5440 user=admin dbname=arcs password=pass sslmode=disable
 
 redis:
   addr: localhost:6380
   password: pass
   db: 0
+
+nats:
+  url: localhost:4222
+  stream: sms
+  queue: sends
+  subjects:
+    - senders
+
+order:
+  cost-per-dst: 2

@@ -35,11 +35,11 @@ func main() {
 
 	//TODO - remove me
 	ctx := context.Background()
-	dummyID := "30c2ac58-bd66-47be-9ebe-ad4d0d16bf6a"
+	dummyID := "01c0cad0-ebea-43ee-a92f-3230d00b4f0e"
 
 	defer natsClient.Close()
 
-	//userService.CreateUser(ctx, 200)
+	userService.CreateUser(ctx, 200)
 
 	d, err := userService.Balance(ctx, dummyID)
 	if err != nil {
@@ -54,6 +54,11 @@ func main() {
 			"0912",
 			"0913",
 			"0914",
+			"0915",
+			"0916",
+			"0917",
+			"0918",
+			"0919",
 		},
 	}); err != nil {
 		log.Fatal(err)

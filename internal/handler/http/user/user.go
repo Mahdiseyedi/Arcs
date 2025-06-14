@@ -6,6 +6,7 @@ import (
 	"arcs/internal/utils"
 	"arcs/internal/utils/errmsg"
 	validator "arcs/internal/validator/user"
+	"errors"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -37,12 +38,13 @@ func (h *Handler) CreateUser(c *gin.Context) {
 		return
 	}
 
-	if err := h.userSvc.CreateUser(c.Request.Context(), req); err != nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": errmsg.FailedCreateUser})
+	resp, err := h.userSvc.CreateUser(c.Request.Context(), req)
+	if err != nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": errmsg.FailedCreateUser.Error()})
 		return
 	}
 
-	c.Status(http.StatusCreated)
+	c.JSON(http.StatusCreated, resp)
 }
 
 func (h *Handler) ChargeUser(c *gin.Context) {
@@ -53,11 +55,15 @@ func (h *Handler) ChargeUser(c *gin.Context) {
 	}
 
 	if err := h.validator.ChargeUser(req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	if err := h.userSvc.ChargeUser(c.Request.Context(), req); err != nil {
+		if errors.Is(err, errmsg.UserNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": errmsg.UserNotFound.Error()})
+			return
+		}
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": err.Error()})
 		return
 	}
@@ -74,6 +80,10 @@ func (h *Handler) GetUserBalance(c *gin.Context) {
 
 	balance, err := h.userSvc.Balance(c.Request.Context(), userID)
 	if err != nil {
+		if errors.Is(err, errmsg.UserNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": errmsg.UserNotFound.Error()})
+			return
+		}
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": err.Error()})
 		return
 	}

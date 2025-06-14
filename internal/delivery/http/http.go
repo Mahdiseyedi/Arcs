@@ -11,24 +11,23 @@ import (
 )
 
 type Server struct {
-	cfg configs.Config
-	hc  *healthcheck.Handler
-
-	u *user.Handler
-	o *order.Handler
+	cfg          configs.Config
+	heathHandler *healthcheck.Handler
+	userHandler  *user.Handler
+	orderHandler *order.Handler
 }
 
 func NewServer(
 	cfg configs.Config,
-	hc *healthcheck.Handler,
-	u *user.Handler,
-	o *order.Handler,
+	healthHandler *healthcheck.Handler,
+	userHandler *user.Handler,
+	orderHandler *order.Handler,
 ) *Server {
 	return &Server{
-		cfg: cfg,
-		hc:  hc,
-		u:   u,
-		o:   o,
+		cfg:          cfg,
+		heathHandler: healthHandler,
+		userHandler:  userHandler,
+		orderHandler: orderHandler,
 	}
 }
 
@@ -36,13 +35,16 @@ func (s *Server) Run() {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 
-	r.GET("/health", s.hc.Check)
+	//health
+	r.GET("/health", s.heathHandler.Check)
 
 	//user
-	r.GET("/api/v1/user/balance/:id", s.u.GetUserBalance)
+	r.POST("api/v1/user", s.userHandler.CreateUser)
+	r.POST("api/v1/user/charge", s.userHandler.ChargeUser)
+	r.GET("/api/v1/user/balance/:id", s.userHandler.GetUserBalance)
 
 	//order
-	r.POST("/api/v1/order", s.o.CreateOrder)
+	r.POST("/api/v1/order", s.orderHandler.CreateOrder)
 
 	//add more routes here
 

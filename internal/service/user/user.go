@@ -23,18 +23,18 @@ func NewUserSvc(
 	}
 }
 
-func (s *Svc) CreateUser(ctx context.Context, req dto.CreateUserRequest) error {
+func (s *Svc) CreateUser(ctx context.Context, req dto.CreateUserRequest) (resp dto.CreateUserResponse, err error) {
 	uid := uuid.New().String()
 
-	if _, err := s.userRepo.CreateUser(ctx, uid, req.Balance); err != nil {
-		return err
+	if err = s.userRepo.CreateUser(ctx, uid, req.Balance); err != nil {
+		return
 	}
 
-	if err := s.balanceRepo.Set(ctx, uid, req.Balance); err != nil {
-		return err
+	if err = s.balanceRepo.Set(ctx, uid, req.Balance); err != nil {
+		return
 	}
 
-	return nil
+	return dto.CreateUserResponse{UserID: uid}, nil
 }
 
 func (s *Svc) Balance(ctx context.Context, uid string) (int64, error) {

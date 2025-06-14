@@ -10,6 +10,7 @@ var (
 
 var (
 	FailedCreateUser    = fmt.Errorf("failed to create user")
+	UserNotFound        = fmt.Errorf("user not found")
 	NegativeBalance     = fmt.Errorf("negative balance")
 	InsufficientBalance = fmt.Errorf("insufficient balance")
 )

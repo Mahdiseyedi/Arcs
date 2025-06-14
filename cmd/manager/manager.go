@@ -13,6 +13,7 @@ import (
 	balanceRepository "arcs/internal/repository/balance"
 	orderRepository "arcs/internal/repository/order"
 	userRepository "arcs/internal/repository/user"
+	"arcs/internal/service/health"
 	orderService "arcs/internal/service/order"
 	userService "arcs/internal/service/user"
 	orderValidator "arcs/internal/validator/order"
@@ -39,13 +40,14 @@ func main() {
 	//services
 	userSvc := userService.NewUserSvc(userRepo, balanceRepo)
 	orderSvc := orderService.NewOrderSvc(cfg, userSvc, orderRepo, natsCli)
+	healthSvc := health.NewHealthSvc(dbCli.DB, redisCli.Client, natsCli)
 
 	//validator
 	userVal := userValidator.NewUserValidator()
 	orderVal := orderValidator.NewOrderValidator()
 
 	//handler
-	healthHandle := healthcheck.NewHealthcheckHandler()
+	healthHandle := healthcheck.NewHealthcheckHandler(healthSvc)
 	userHandle := userHandler.NewUserHandler(userVal, userSvc)
 	orderHandle := orderHandler.NewOrderHandler(orderVal, orderSvc)
 

@@ -34,7 +34,7 @@ func NewDatabase(cfg configs.Config) (DB *Database) {
 	database := &Database{
 		DB: db,
 	}
-
+	
 	database.autoMigrate()
 
 	return database

@@ -68,3 +68,11 @@ func (c *Client) Consume(topic string, handler nats.MsgHandler) error {
 
 	return nil
 }
+
+func (c *Client) HealthCheck() error {
+	if !c.nc.IsConnected() {
+		return fmt.Errorf("[NATS] NATS not connected")
+	}
+
+	return nil
+}

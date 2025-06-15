@@ -13,4 +13,5 @@ var (
 	UserNotFound        = fmt.Errorf("user not found")
 	NegativeBalance     = fmt.Errorf("negative balance")
 	InsufficientBalance = fmt.Errorf("insufficient balance")
+	SMSNotFound         = fmt.Errorf("sms not found")
 )

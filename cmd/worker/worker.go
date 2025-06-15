@@ -12,6 +12,7 @@ import (
 
 func main() {
 	cfg := configs.Load("../../worker-config.yaml")
+	time.Local, _ = time.LoadLocation(cfg.Basic.TimeZone)
 
 	natsClient := natsCli.NewNatsClient(cfg)
 	_ = natsClient.EnsureStream()

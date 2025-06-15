@@ -60,3 +60,37 @@ func (r *Repository) ListPending(ctx context.Context, createdAfter time.Time, ba
 
 	return smss, nil
 }
+
+func (r *Repository) GetUserSMS(ctx context.Context, userID string, filters models.SMSFilter) ([]models.SMS, int64, error) {
+	var smsList []models.SMS
+	var total int64
+
+	q := r.db.DB.WithContext(ctx).
+		Joins("JOIN orders ON orders.id = sms.order_id").
+		Where("orders.user_id = ?", userID)
+
+	if filters.Status != "" {
+		q = q.Where("sms.status = ?", filters.Status)
+	}
+	if filters.StartDate != nil {
+		q = q.Where("sms.created_at >= ?", filters.StartDate)
+	}
+	if filters.EndDate != nil {
+		q = q.Where("sms.created_at <= ?", filters.EndDate)
+	}
+
+	//calculate count before pagination
+	if err := q.Model(&models.SMS{}).Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	offset := (filters.Page - 1) * filters.PageSize
+	if err := q.Limit(filters.PageSize).
+		Offset(offset).
+		Order("sms.created_at DESC").
+		Find(&smsList).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return smsList, total, nil
+}

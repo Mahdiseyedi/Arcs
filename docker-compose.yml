@@ -10,6 +10,7 @@ services:
       POSTGRESQL_USERNAME: admin
       POSTGRESQL_PASSWORD: pass
       POSTGRESQL_DATABASE: arcs
+      POSTGRESQL_TIMEZONE: Asia/Tehran
     ports:
       - "5440:5432"
 

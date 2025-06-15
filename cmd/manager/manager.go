@@ -20,10 +20,13 @@ import (
 	orderValidator "arcs/internal/validator/order"
 	userValidator "arcs/internal/validator/user"
 	"fmt"
+	"time"
 )
 
 func main() {
 	cfg := configs.Load("../../config.yaml")
+
+	time.Local, _ = time.LoadLocation(cfg.Basic.TimeZone)
 
 	//clients
 	crn := jobs.NewCronJob()
@@ -39,7 +42,7 @@ func main() {
 	smsRepo := smsRepository.NewSMSRepository(cfg, dbCli)
 
 	//services
-	userSvc := userService.NewUserSvc(userRepo, balanceRepo)
+	userSvc := userService.NewUserSvc(userRepo, smsRepo, balanceRepo)
 	orderSvc := orderService.NewOrderSvc(cfg, userSvc, orderRepo, smsRepo, natsCli)
 	healthSvc := health.NewHealthSvc(dbCli.DB, redisCli.Client, natsCli)
 

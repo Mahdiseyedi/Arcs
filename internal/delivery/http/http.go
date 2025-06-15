@@ -46,6 +46,7 @@ func (s *Server) Run() {
 			u.POST("/", s.userHandler.CreateUser)
 			u.POST("/charge", s.userHandler.ChargeUser)
 			u.GET("/balance/:id", s.userHandler.GetUserBalance)
+			u.GET("/:id/sms", s.userHandler.GetFilteredUserSMS)
 		}
 
 		o := api.Group("/order")

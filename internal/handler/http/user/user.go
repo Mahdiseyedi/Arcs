@@ -90,3 +90,31 @@ func (h *Handler) GetUserBalance(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"balance": balance})
 }
+
+func (h *Handler) GetFilteredUserSMS(c *gin.Context) {
+	var req dto.GetFilteredUserSMSReq
+	req.UserID = c.Param("id")
+	if err := c.ShouldBindQuery(&req.Filter); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": errmsg.InvalidRequest.Error()})
+		return
+	}
+	if req.Filter.Page == 0 {
+		req.Filter.Page = 1
+	}
+
+	if req.Filter.PageSize == 0 {
+		req.Filter.PageSize = 20
+	}
+
+	resp, err := h.userSvc.GetFilteredUserSMS(c.Request.Context(), req)
+	if err != nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "failed to retrieve user sms report"})
+		return
+	}
+	if resp.Count < 1 {
+		c.JSON(http.StatusNotFound, gin.H{"error": errmsg.SMSNotFound.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
+}

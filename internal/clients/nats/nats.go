@@ -15,7 +15,13 @@ type Client struct {
 }
 
 func NewNatsClient(cfg configs.Config) *Client {
-	nc, err := nats.Connect(cfg.Nats.URL, nats.Timeout(time.Duration(cfg.Nats.ClientTimeout)*time.Second))
+	opts := []nats.Option{
+		nats.Timeout(time.Duration(cfg.Nats.ClientTimeout) * time.Second),
+		nats.ReconnectWait(time.Duration(cfg.Nats.ReconnectWait) * time.Second),
+		nats.MaxReconnects(cfg.Nats.MaxReconnects),
+	}
+
+	nc, err := nats.Connect(cfg.Nats.URL, opts...)
 	if err != nil {
 		log.Fatalf("[NATS] Failed to connect to NATS: [%v]", err)
 	}

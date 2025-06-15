@@ -10,7 +10,6 @@ import (
 	orderHandler "arcs/internal/handler/http/order"
 	userHandler "arcs/internal/handler/http/user"
 	"arcs/internal/jobs"
-	balanceRepository "arcs/internal/repository/balance"
 	orderRepository "arcs/internal/repository/order"
 	smsRepository "arcs/internal/repository/sms"
 	userRepository "arcs/internal/repository/user"
@@ -37,12 +36,12 @@ func main() {
 
 	//repos
 	userRepo := userRepository.NewUserRepository(dbCli)
-	balanceRepo := balanceRepository.NewBalanceRepository(redisCli)
+	//balanceRepo := balanceRepository.NewBalanceRepository(redisCli)
 	orderRepo := orderRepository.NewOrderRepository(dbCli)
 	smsRepo := smsRepository.NewSMSRepository(cfg, dbCli)
 
 	//services
-	userSvc := userService.NewUserSvc(userRepo, smsRepo, balanceRepo)
+	userSvc := userService.NewUserSvc(userRepo, smsRepo)
 	orderSvc := orderService.NewOrderSvc(cfg, userSvc, orderRepo, smsRepo, natsCli)
 	healthSvc := health.NewHealthSvc(dbCli.DB, redisCli.Client, natsCli)
 

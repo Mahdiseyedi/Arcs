@@ -9,11 +9,11 @@ import (
 	"arcs/internal/repository/sms"
 	userSvc "arcs/internal/service/user"
 	consts "arcs/internal/utils/const"
-	"arcs/internal/utils/errmsg"
 	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
+	"log"
 	"sync"
 	"time"
 )
@@ -43,17 +43,7 @@ func NewOrderSvc(
 }
 
 func (s *Svc) RegisterOrder(ctx context.Context, req dto.OrderRequest) error {
-	//check user exists or not
-	balance, err := s.userSvc.Balance(ctx, req.UserID)
-	if err != nil {
-		return err
-	}
-
 	cost := int64(len(req.Destinations) * s.cfg.Order.SMSCost)
-	//check for enough balance
-	if cost > balance {
-		return errmsg.InsufficientBalance
-	}
 
 	//lock enough balance to initiation
 	if err := s.userSvc.DecreaseBalance(ctx, req.UserID, cost); err != nil {
@@ -110,10 +100,9 @@ func (s *Svc) publish(smss ...models.SMS) {
 			byteSms, _ := json.Marshal(sms)
 
 			if err := s.natsClient.Publish(s.cfg.Nats.Subjects[0], byteSms, sms.ID); err != nil {
-				//log.Printf("pending: [%v]", sms.Destination)
+				log.Printf("pending: [%v]", sms)
 				sms.Status = consts.PendingStatus
 			} else {
-				//log.Printf("published: [%v]", sms.Destination)
 				sms.Status = consts.PublishedStatus
 			}
 
@@ -136,7 +125,6 @@ func (s *Svc) RecoverUnPblishSMS() {
 		return
 	}
 
-	//log.Println("start processing pending sms...")
 	ctx := context.Background()
 	var initialPoint time.Time
 
@@ -155,8 +143,6 @@ func (s *Svc) RecoverUnPblishSMS() {
 
 		initialPoint = smss[len(smss)-1].CreatedAt
 	}
-
-	//log.Println("process pending sms finished...")
 }
 
 func (s *Svc) rePublish(smss ...models.SMS) {
@@ -177,9 +163,7 @@ func (s *Svc) rePublish(smss ...models.SMS) {
 			byteSms, _ := json.Marshal(sms)
 
 			if err := s.natsClient.Publish(s.cfg.Nats.Subjects[0], byteSms, sms.ID); err != nil {
-				//log.Printf("failed to register job for dst: [%v]", sms)
 			} else {
-				//log.Printf("job registered for dst: [%v]", sms)
 				mu.Lock()
 				publishedSms = append(publishedSms, sms)
 				mu.Unlock()

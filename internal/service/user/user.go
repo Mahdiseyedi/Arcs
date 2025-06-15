@@ -2,7 +2,6 @@ package user
 
 import (
 	"arcs/internal/dto"
-	"arcs/internal/repository/balance"
 	"arcs/internal/repository/sms"
 	"arcs/internal/repository/user"
 	"context"
@@ -10,20 +9,17 @@ import (
 )
 
 type Svc struct {
-	userRepo    *user.Repository
-	smsRepo     *sms.Repository
-	balanceRepo *balance.Repository
+	userRepo *user.Repository
+	smsRepo  *sms.Repository
 }
 
 func NewUserSvc(
 	userRepo *user.Repository,
 	smsRepo *sms.Repository,
-	balance *balance.Repository,
 ) *Svc {
 	return &Svc{
-		userRepo:    userRepo,
-		smsRepo:     smsRepo,
-		balanceRepo: balance,
+		userRepo: userRepo,
+		smsRepo:  smsRepo,
 	}
 }
 
@@ -34,23 +30,19 @@ func (s *Svc) CreateUser(ctx context.Context, req dto.CreateUserRequest) (resp d
 		return
 	}
 
-	if err = s.balanceRepo.Set(ctx, uid, req.Balance); err != nil {
-		return
-	}
-
 	return dto.CreateUserResponse{UserID: uid}, nil
 }
 
 func (s *Svc) Balance(ctx context.Context, uid string) (int64, error) {
-	return s.balanceRepo.Get(ctx, uid)
+	return s.userRepo.GetUserBalance(ctx, uid)
 }
 
 func (s *Svc) ChargeUser(ctx context.Context, req dto.ChargeUserBalance) error {
-	return s.balanceRepo.Increase(ctx, req.UserId, req.Amount)
+	return s.userRepo.IncreaseBalance(ctx, req.UserId, req.Amount)
 }
 
 func (s *Svc) DecreaseBalance(ctx context.Context, uid string, amount int64) error {
-	return s.balanceRepo.Decrease(ctx, uid, amount)
+	return s.userRepo.DecreaseBalance(ctx, uid, amount)
 }
 
 func (s *Svc) GetFilteredUserSMS(ctx context.Context, req dto.GetFilteredUserSMSReq) (dto.GetFilteredUserSMSResp, error) {

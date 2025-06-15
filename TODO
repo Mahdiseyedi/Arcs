@@ -1,7 +1,5 @@
 1. adding logger to service layer
 2. adding volume to compose
-3. adding job for sync balance cache layer with db
-6. adding failed job to DLQ
 8. clarify worker
 10. add validation for order register
 11. if redis down, its return 503 but create user in db, violate this on redis failure

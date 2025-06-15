@@ -6,6 +6,7 @@ import (
 	"arcs/internal/models"
 	consts "arcs/internal/utils/const"
 	"context"
+	"time"
 )
 
 type Repository struct {
@@ -47,14 +48,15 @@ func (r *Repository) Update(ctx context.Context, smss []models.SMS) error {
 		Update("status", consts.PublishedStatus).Error
 }
 
-func (r *Repository) ListPending(ctx context.Context) ([]models.SMS, error) {
+func (r *Repository) ListPending(ctx context.Context, createdAfter time.Time, batchSize int) ([]models.SMS, error) {
 	var smss []models.SMS
 	if err := r.db.DB.WithContext(ctx).
-		Where("status = ?", consts.PendingStatus).
+		Where("status = ? AND created_at > ?", consts.PendingStatus, createdAfter).
+		Limit(batchSize).
 		Preload("Order").
 		Find(&smss).Error; err != nil {
 		return nil, err
 	}
-	
+
 	return smss, nil
 }

@@ -87,20 +87,19 @@ func (s *Svc) RegisterOrder(ctx context.Context, req dto.OrderRequest) error {
 		})
 	}
 
-	s.publish(ctx, smsList...)
+	go s.publish(smsList...)
 
 	return nil
 }
 
-func (s *Svc) publish(ctx context.Context, smss ...models.SMS) {
+func (s *Svc) publish(smss ...models.SMS) {
 	_ = s.natsClient.EnsureStream()
-
 	var publishedSms []models.SMS
 	for _, sms := range smss {
 		//TODO - replace me with protobuf
 		byteSms, _ := json.Marshal(sms)
 
-		if err := s.natsClient.Publish(s.cfg.Nats.Subjects[0], byteSms); err != nil {
+		if err := s.natsClient.Publish(s.cfg.Nats.Subjects[0], byteSms, sms.ID); err != nil {
 			log.Printf("failed to register job for dst: [%v]", sms)
 			sms.Status = consts.PendingStatus
 		} else {
@@ -111,22 +110,42 @@ func (s *Svc) publish(ctx context.Context, smss ...models.SMS) {
 		publishedSms = append(publishedSms, sms)
 	}
 
-	_ = s.smsRepo.CreateSMSBatch(ctx, publishedSms)
-
+	//TODO - replace me with real ctx
+	_ = s.smsRepo.CreateSMSBatch(context.Background(), publishedSms)
 }
 
-func (s *Svc) RecoverUnPblishSMS(ctx context.Context) error {
-	smss, err := s.smsRepo.ListPending(ctx)
-	if err != nil {
-		return err
+func (s *Svc) RecoverUnPblishSMS() error {
+	//avoid republish if nats not came up
+	if nerr := s.natsClient.HealthCheck(); nerr != nil {
+		return nerr
 	}
 
-	s.rePublish(ctx, smss...)
+	log.Println("start processing pending sms...")
+	ctx := context.Background()
+	var initialPoint time.Time
 
+	for {
+		//TODO - replace me with real context
+		smss, err := s.smsRepo.ListPending(ctx, initialPoint, s.cfg.Basic.PendingProcessBatchSize)
+		if err != nil {
+			return err
+		}
+
+		if len(smss) == 0 {
+			break
+		}
+
+		s.rePublish(smss...)
+
+		initialPoint = smss[len(smss)-1].CreatedAt
+		log.Printf("len processed sms: %v", len(smss))
+	}
+
+	log.Println("process pending sms finished...")
 	return nil
 }
 
-func (s *Svc) rePublish(ctx context.Context, smss ...models.SMS) {
+func (s *Svc) rePublish(smss ...models.SMS) {
 	_ = s.natsClient.EnsureStream()
 
 	var publishedSms []models.SMS
@@ -135,7 +154,7 @@ func (s *Svc) rePublish(ctx context.Context, smss ...models.SMS) {
 		//TODO - replace me with protobuf
 		byteSms, _ := json.Marshal(sms)
 
-		if err := s.natsClient.Publish(s.cfg.Nats.Subjects[0], byteSms); err != nil {
+		if err := s.natsClient.Publish(s.cfg.Nats.Subjects[0], byteSms, sms.ID); err != nil {
 			log.Printf("failed to register job for dst: [%v]", sms)
 		} else {
 			log.Printf("job registered for dst: [%v]", sms)
@@ -144,6 +163,7 @@ func (s *Svc) rePublish(ctx context.Context, smss ...models.SMS) {
 	}
 
 	if len(publishedSms) > 0 {
-		_ = s.smsRepo.Update(ctx, publishedSms)
+		//TODO - replace me with real context
+		_ = s.smsRepo.Update(context.Background(), publishedSms)
 	}
 }

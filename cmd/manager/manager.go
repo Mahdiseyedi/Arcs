@@ -19,9 +19,7 @@ import (
 	userService "arcs/internal/service/user"
 	orderValidator "arcs/internal/validator/order"
 	userValidator "arcs/internal/validator/user"
-	"context"
 	"fmt"
-	"log"
 )
 
 func main() {
@@ -55,10 +53,8 @@ func main() {
 	orderHandle := orderHandler.NewOrderHandler(orderVal, orderSvc)
 
 	//jobs
-	//TODO - replace me with config value
-	crn.C.AddFunc(fmt.Sprintf("@every %ds", 10), func() {
-		orderSvc.RecoverUnPblishSMS(context.Background())
-		log.Println("retry for pending jobs...")
+	crn.C.AddFunc(fmt.Sprintf("@every %ds", cfg.Nats.RetryTimeOut), func() {
+		orderSvc.RecoverUnPblishSMS()
 	})
 
 	//delivery

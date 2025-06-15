@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/nats-io/nats.go"
 	"log"
+	"time"
 )
 
 type Client struct {
@@ -14,7 +15,7 @@ type Client struct {
 }
 
 func NewNatsClient(cfg configs.Config) *Client {
-	nc, err := nats.Connect(cfg.Nats.URL)
+	nc, err := nats.Connect(cfg.Nats.URL, nats.Timeout(time.Duration(cfg.Nats.ClientTimeout)*time.Second))
 	if err != nil {
 		log.Fatalf("[NATS] Failed to connect to NATS: [%v]", err)
 	}
@@ -51,8 +52,15 @@ func (c *Client) EnsureStream() error {
 	return nil
 }
 
-func (c *Client) Publish(topic string, msg []byte) error {
-	_, err := c.js.Publish(topic, msg)
+func (c *Client) Publish(topic string, msg []byte, idmKey string) error {
+	natsMsg := &nats.Msg{
+		Subject: topic,
+		Data:    msg,
+		Header:  nats.Header{},
+	}
+	natsMsg.Header.Set(nats.MsgIdHdr, idmKey)
+
+	_, err := c.js.PublishMsg(natsMsg)
 	if err != nil {
 		return fmt.Errorf("[NATS] Failed to publish message: %v", err)
 	}

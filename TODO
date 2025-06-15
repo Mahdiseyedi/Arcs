@@ -2,5 +2,4 @@
 2. adding volume to compose
 8. clarify worker
 10. add validation for order register
-11. if redis down, its return 503 but create user in db, violate this on redis failure
 13. adding ctx to publish and republish

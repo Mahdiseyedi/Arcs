@@ -1,4 +1,5 @@
 basic:
+  time-zone: Asia/Tehran
   port: 8088
   environment: prod
   #  Environment: dev
@@ -6,7 +7,7 @@ basic:
   pending-process-batch-size: 100
 
 database:
-  connection_string: host=localhost port=5440 user=admin dbname=arcs password=pass sslmode=disable
+  connection_string: host=localhost port=5440 user=admin dbname=arcs password=pass sslmode=disable TimeZone=Asia/Tehran
 
 redis:
   addr: localhost:6380
@@ -15,7 +16,9 @@ redis:
 
 nats:
   url: localhost:4222
-  client-timeout: 3
+  client-timeout: 5
+  reconnect-wait: 3
+  max-reconnects: 3
   retry-timeout: 10
   stream: sms
   queue: sends

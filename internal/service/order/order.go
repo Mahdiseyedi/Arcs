@@ -13,7 +13,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
-	"log"
 	"sync"
 	"time"
 )
@@ -100,7 +99,6 @@ func (s *Svc) publish(smss ...models.SMS) {
 			byteSms, _ := json.Marshal(sms)
 
 			if err := s.natsClient.Publish(s.cfg.Nats.Subjects[0], byteSms, sms.ID); err != nil {
-				log.Printf("pending: [%v]", sms)
 				sms.Status = consts.PendingStatus
 			} else {
 				sms.Status = consts.PublishedStatus

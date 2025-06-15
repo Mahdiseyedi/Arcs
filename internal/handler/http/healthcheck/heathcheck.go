@@ -29,10 +29,10 @@ func (h *Handler) Check(c *gin.Context) {
 		return
 	}
 
-	if err := h.svc.NatsHealthCheck(c.Request.Context()); err != nil {
-		c.Status(http.StatusServiceUnavailable)
-		return
-	}
+	//if err := h.svc.NatsHealthCheck(c.Request.Context()); err != nil {
+	//	c.Status(http.StatusServiceUnavailable)
+	//	return
+	//}
 
 	//TODO - add more logic for health check here
 

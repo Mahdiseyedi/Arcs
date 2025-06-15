@@ -3,6 +3,8 @@ package main
 import (
 	natsCli "arcs/internal/clients/nats"
 	"arcs/internal/configs"
+	"arcs/internal/models"
+	"encoding/json"
 	"github.com/nats-io/nats.go"
 	"log"
 	"time"
@@ -15,21 +17,26 @@ func main() {
 	_ = natsClient.EnsureStream()
 
 	for {
-		if err := natsClient.Consume(cfg.Nats.Subjects[0], createMessageHandler("1")); err != nil {
+		if err := natsClient.Consume(cfg.Nats.Subjects[0], createMessageHandler()); err != nil {
 			log.Printf("[CONSUMER] Failed to consume message: %v", err)
 			time.Sleep(1 * time.Second)
 		}
 	}
 }
 
-func createMessageHandler(workerID string) nats.MsgHandler {
+func createMessageHandler() nats.MsgHandler {
 	return func(msg *nats.Msg) {
-		log.Printf("[%s] Processing: %s\n\n", workerID, string(msg.Data))
+		var sms models.SMS
+		// TODO - replace me with protobuf
+		if err := json.Unmarshal(msg.Data, &sms); err != nil {
+			log.Printf("Failed to unmarshal msg: %v", err)
+			return
+		}
 
 		time.Sleep(1 * time.Second) // simulate job
 
 		msg.Ack() // manual ack
 
-		log.Printf("[%s] Done: %s\n\n", workerID, string(msg.Data))
+		log.Printf("Processed: [%s] - [%s] - [%s]\n", sms.ID, sms.Destination, sms.Order.Content)
 	}
 }

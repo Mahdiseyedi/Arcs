@@ -14,7 +14,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
-	"log"
+	"sync"
 	"time"
 )
 
@@ -62,12 +62,13 @@ func (s *Svc) RegisterOrder(ctx context.Context, req dto.OrderRequest) error {
 
 	//register order to db
 	orderID := uuid.NewString()
-	if err := s.orderRepo.Submit(ctx, models.Order{
+	ord := models.Order{
 		ID:        orderID,
 		CreatedAt: time.Now(),
 		UserID:    req.UserID,
 		Content:   req.Content,
-	}); err != nil {
+	}
+	if err := s.orderRepo.Submit(ctx, ord); err != nil {
 		//refund balance for failure
 		_ = s.userSvc.ChargeUser(ctx, dto.ChargeUserBalance{
 			UserId: req.UserID,
@@ -84,6 +85,7 @@ func (s *Svc) RegisterOrder(ctx context.Context, req dto.OrderRequest) error {
 			UpdatedAt:   time.Now(),
 			OrderID:     orderID,
 			Destination: dest,
+			Order:       &ord,
 		})
 	}
 
@@ -94,33 +96,47 @@ func (s *Svc) RegisterOrder(ctx context.Context, req dto.OrderRequest) error {
 
 func (s *Svc) publish(smss ...models.SMS) {
 	_ = s.natsClient.EnsureStream()
-	var publishedSms []models.SMS
+	var (
+		publishedSms []models.SMS
+		mu           sync.Mutex
+		wg           sync.WaitGroup
+	)
 	for _, sms := range smss {
-		//TODO - replace me with protobuf
-		byteSms, _ := json.Marshal(sms)
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
 
-		if err := s.natsClient.Publish(s.cfg.Nats.Subjects[0], byteSms, sms.ID); err != nil {
-			log.Printf("failed to register job for dst: [%v]", sms)
-			sms.Status = consts.PendingStatus
-		} else {
-			log.Printf("job registered for dst: [%v]", sms)
-			sms.Status = consts.PublishedStatus
-		}
+			//TODO - replace me with protobuf
+			byteSms, _ := json.Marshal(sms)
 
-		publishedSms = append(publishedSms, sms)
+			if err := s.natsClient.Publish(s.cfg.Nats.Subjects[0], byteSms, sms.ID); err != nil {
+				//log.Printf("pending: [%v]", sms.Destination)
+				sms.Status = consts.PendingStatus
+			} else {
+				//log.Printf("published: [%v]", sms.Destination)
+				sms.Status = consts.PublishedStatus
+			}
+
+			mu.Lock()
+			publishedSms = append(publishedSms, sms)
+			mu.Unlock()
+		}()
 	}
+
+	//we're waiting for all msgs published asynchronously
+	wg.Wait()
 
 	//TODO - replace me with real ctx
 	_ = s.smsRepo.CreateSMSBatch(context.Background(), publishedSms)
 }
 
-func (s *Svc) RecoverUnPblishSMS() error {
+func (s *Svc) RecoverUnPblishSMS() {
 	//avoid republish if nats not came up
 	if nerr := s.natsClient.HealthCheck(); nerr != nil {
-		return nerr
+		return
 	}
 
-	log.Println("start processing pending sms...")
+	//log.Println("start processing pending sms...")
 	ctx := context.Background()
 	var initialPoint time.Time
 
@@ -128,7 +144,7 @@ func (s *Svc) RecoverUnPblishSMS() error {
 		//TODO - replace me with real context
 		smss, err := s.smsRepo.ListPending(ctx, initialPoint, s.cfg.Basic.PendingProcessBatchSize)
 		if err != nil {
-			return err
+			return
 		}
 
 		if len(smss) == 0 {
@@ -138,30 +154,40 @@ func (s *Svc) RecoverUnPblishSMS() error {
 		s.rePublish(smss...)
 
 		initialPoint = smss[len(smss)-1].CreatedAt
-		log.Printf("len processed sms: %v", len(smss))
 	}
 
-	log.Println("process pending sms finished...")
-	return nil
+	//log.Println("process pending sms finished...")
 }
 
 func (s *Svc) rePublish(smss ...models.SMS) {
 	_ = s.natsClient.EnsureStream()
 
-	var publishedSms []models.SMS
+	var (
+		publishedSms []models.SMS
+		mu           sync.Mutex
+		wg           sync.WaitGroup
+	)
 
 	for _, sms := range smss {
-		//TODO - replace me with protobuf
-		byteSms, _ := json.Marshal(sms)
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
 
-		if err := s.natsClient.Publish(s.cfg.Nats.Subjects[0], byteSms, sms.ID); err != nil {
-			log.Printf("failed to register job for dst: [%v]", sms)
-		} else {
-			log.Printf("job registered for dst: [%v]", sms)
-			publishedSms = append(publishedSms, sms)
-		}
+			//TODO - replace me with protobuf
+			byteSms, _ := json.Marshal(sms)
+
+			if err := s.natsClient.Publish(s.cfg.Nats.Subjects[0], byteSms, sms.ID); err != nil {
+				//log.Printf("failed to register job for dst: [%v]", sms)
+			} else {
+				//log.Printf("job registered for dst: [%v]", sms)
+				mu.Lock()
+				publishedSms = append(publishedSms, sms)
+				mu.Unlock()
+			}
+		}()
 	}
 
+	wg.Wait()
 	if len(publishedSms) > 0 {
 		//TODO - replace me with real context
 		_ = s.smsRepo.Update(context.Background(), publishedSms)

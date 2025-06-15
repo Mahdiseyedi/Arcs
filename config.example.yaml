@@ -1,7 +1,9 @@
 basic:
   port: 8088
   environment: prod
-#  Environment: dev
+  #  Environment: dev
+  insert-batch-size: 300
+  pending-process-batch-size: 100
 
 database:
   connection_string: host=localhost port=5440 user=admin dbname=arcs password=pass sslmode=disable
@@ -13,6 +15,8 @@ redis:
 
 nats:
   url: localhost:4222
+  client-timeout: 3
+  retry-timeout: 10
   stream: sms
   queue: sends
   subjects:

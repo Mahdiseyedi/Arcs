@@ -1,6 +1,9 @@
 package dto
 
-import "arcs/internal/models"
+import (
+	"arcs/internal/models"
+	"time"
+)
 
 type CreateUserRequest struct {
 	Balance int64 `json:"balance" binding:"required"`
@@ -21,6 +24,15 @@ type GetFilteredUserSMSReq struct {
 }
 
 type GetFilteredUserSMSResp struct {
-	SMS   []models.SMS `json:"list_sms"`
-	Count int64        `json:"count"`
+	SMS   []SMSResponse `json:"list_sms"`
+	Count int64         `json:"count"`
+}
+
+type SMSResponse struct {
+	ID          string    `json:"id"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+	OrderID     string    `json:"order_id"`
+	Destination string    `json:"destination"`
+	Status      string    `json:"status"`
 }

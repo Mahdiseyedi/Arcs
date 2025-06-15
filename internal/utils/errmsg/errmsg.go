@@ -6,6 +6,9 @@ var (
 	InvalidTypeAssertion = fmt.Errorf("invalid type assertion")
 	InvalidID            = fmt.Errorf("invalid ID")
 	InvalidRequest       = fmt.Errorf("invalid request")
+	InvalidPage          = fmt.Errorf("invalid page")
+	InvalidPageSize      = fmt.Errorf("invalid pageSize")
+	InvalidStatus        = fmt.Errorf("invalid status")
 )
 
 var (

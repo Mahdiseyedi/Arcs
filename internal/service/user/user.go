@@ -51,8 +51,20 @@ func (s *Svc) GetFilteredUserSMS(ctx context.Context, req dto.GetFilteredUserSMS
 		return dto.GetFilteredUserSMSResp{}, err
 	}
 
+	resp := make([]dto.SMSResponse, 0)
+	for _, sms := range smss {
+		resp = append(resp, dto.SMSResponse{
+			ID:          sms.ID,
+			CreatedAt:   sms.CreatedAt,
+			UpdatedAt:   sms.UpdatedAt,
+			OrderID:     sms.OrderID,
+			Destination: sms.Destination,
+			Status:      sms.Status,
+		})
+	}
+
 	return dto.GetFilteredUserSMSResp{
-		SMS:   smss,
+		SMS:   resp,
 		Count: cnt,
 	}, nil
 }

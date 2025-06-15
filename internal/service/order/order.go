@@ -13,6 +13,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
+	"log"
 	"sync"
 	"time"
 )
@@ -100,8 +101,10 @@ func (s *Svc) publish(smss ...models.SMS) {
 
 			if err := s.natsClient.Publish(s.cfg.Nats.Subjects[0], byteSms, sms.ID); err != nil {
 				sms.Status = consts.PendingStatus
+				log.Printf("pending: [%v]", sms.ID)
 			} else {
 				sms.Status = consts.PublishedStatus
+				log.Printf("published: [%v]", sms.ID)
 			}
 
 			mu.Lock()
@@ -161,7 +164,9 @@ func (s *Svc) rePublish(smss ...models.SMS) {
 			byteSms, _ := json.Marshal(sms)
 
 			if err := s.natsClient.Publish(s.cfg.Nats.Subjects[0], byteSms, sms.ID); err != nil {
+				log.Printf("pending: [%v]", sms.ID)
 			} else {
+				log.Printf("published: [%v]", sms.ID)
 				mu.Lock()
 				publishedSms = append(publishedSms, sms)
 				mu.Unlock()

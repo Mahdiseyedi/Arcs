@@ -98,6 +98,12 @@ func (h *Handler) GetFilteredUserSMS(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": errmsg.InvalidRequest.Error()})
 		return
 	}
+
+	if err := h.validator.FilteredUserSMS(req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
 	if req.Filter.Page == 0 {
 		req.Filter.Page = 1
 	}

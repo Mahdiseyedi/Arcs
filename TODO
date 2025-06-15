@@ -1,5 +1,4 @@
 1. adding logger to service layer
 2. adding volume to compose
 8. clarify worker
-10. add validation for order register
 13. adding ctx to publish and republish

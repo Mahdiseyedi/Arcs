@@ -224,7 +224,7 @@ func generateDestinations(count int) []string {
 	used := make(map[string]bool)
 
 	for i := 0; i < count; {
-		num := rand.Intn(1000)
+		num := rand.Int63n(10_000_000_000)
 		dest := fmt.Sprintf("%11d", num)
 
 		if !used[dest] {

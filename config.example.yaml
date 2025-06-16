@@ -3,8 +3,8 @@ basic:
   port: 8088
   environment: prod
   #  Environment: dev
-  insert-batch-size: 300
-  pending-process-batch-size: 100
+  insert-batch-size: 500
+  pending-process-batch-size: 1000
   republish-lock-duration: 5
 
 database:

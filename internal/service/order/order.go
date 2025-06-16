@@ -4,6 +4,7 @@ import (
 	"arcs/internal/clients/nats"
 	"arcs/internal/configs"
 	"arcs/internal/dto"
+	"arcs/internal/lock"
 	"arcs/internal/models"
 	"arcs/internal/repository/order"
 	"arcs/internal/repository/sms"
@@ -24,6 +25,7 @@ type Svc struct {
 	orderRepo  *order.Repository
 	smsRepo    *sms.Repository
 	natsClient *nats.Client
+	lock       *lock.Lock
 }
 
 func NewOrderSvc(
@@ -32,6 +34,7 @@ func NewOrderSvc(
 	orderRepo *order.Repository,
 	smsRepo *sms.Repository,
 	natsClient *nats.Client,
+	lock *lock.Lock,
 ) *Svc {
 	return &Svc{
 		cfg:        cfg,
@@ -39,6 +42,7 @@ func NewOrderSvc(
 		orderRepo:  orderRepo,
 		smsRepo:    smsRepo,
 		natsClient: natsClient,
+		lock:       lock,
 	}
 }
 
@@ -126,9 +130,39 @@ func (s *Svc) RecoverUnPblishSMS() {
 		return
 	}
 
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	var initialPoint time.Time
 
+	//check lock
+	acquired, err := s.lock.AcquireLock(ctx, consts.RepublishLock)
+	if err != nil {
+		return
+	}
+
+	//check no one other have this lock
+	if !acquired {
+		return
+	}
+
+	//ensure we release lock after crash or end job
+	defer s.lock.ReleaseLock(ctx, consts.RepublishLock)
+
+	go func() {
+		ticker := time.NewTicker(time.Duration(s.cfg.Basic.RepublishLockDuration) * time.Second / 2)
+		for {
+			select {
+			case <-ticker.C:
+				if err := s.lock.ExtendLock(ctx, consts.RepublishLock); err != nil {
+					log.Printf("[LOCK] failed to extend lock: %v\n", err)
+				}
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+
+	//s.redisCli.Client.Ping(ctx)
 	for {
 		//TODO - replace me with real context
 		smss, err := s.smsRepo.ListPending(ctx, initialPoint, s.cfg.Basic.PendingProcessBatchSize)

@@ -17,4 +17,5 @@ var (
 	NegativeBalance     = fmt.Errorf("negative balance")
 	InsufficientBalance = fmt.Errorf("insufficient balance")
 	SMSNotFound         = fmt.Errorf("sms not found")
+	FailedExtendLock    = fmt.Errorf("failed to extend lock TTL")
 )

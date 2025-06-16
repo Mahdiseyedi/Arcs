@@ -7,3 +7,8 @@ const (
 	FailedStatus    = "failed"
 	DeliveredStatus = "delivered"
 )
+
+// locks
+const (
+	RepublishLock = "lock:recover-unpublished-sms"
+)

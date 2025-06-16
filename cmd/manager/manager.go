@@ -10,6 +10,7 @@ import (
 	orderHandler "arcs/internal/handler/http/order"
 	userHandler "arcs/internal/handler/http/user"
 	"arcs/internal/jobs"
+	"arcs/internal/lock"
 	orderRepository "arcs/internal/repository/order"
 	smsRepository "arcs/internal/repository/sms"
 	userRepository "arcs/internal/repository/user"
@@ -31,6 +32,7 @@ func main() {
 	crn := jobs.NewCronJob()
 	dbCli := db.NewDatabase(cfg)
 	redisCli := redis.NewRedisCli(cfg)
+	lockCli := lock.NewLock(cfg, redisCli)
 	natsCli := nats.NewNatsClient(cfg)
 	defer natsCli.Close()
 
@@ -42,7 +44,7 @@ func main() {
 
 	//services
 	userSvc := userService.NewUserSvc(userRepo, smsRepo)
-	orderSvc := orderService.NewOrderSvc(cfg, userSvc, orderRepo, smsRepo, natsCli)
+	orderSvc := orderService.NewOrderSvc(cfg, userSvc, orderRepo, smsRepo, natsCli, lockCli)
 	healthSvc := health.NewHealthSvc(dbCli.DB, redisCli.Client, natsCli)
 
 	//validator

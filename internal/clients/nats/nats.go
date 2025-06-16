@@ -19,6 +19,7 @@ func NewNatsClient(cfg configs.Config) *Client {
 		nats.Timeout(time.Duration(cfg.Nats.ClientTimeout) * time.Second),
 		nats.ReconnectWait(time.Duration(cfg.Nats.ReconnectWait) * time.Second),
 		nats.MaxReconnects(cfg.Nats.MaxReconnects),
+		nats.ReconnectBufSize(-1), // this one disable buffer on local clients
 	}
 
 	nc, err := nats.Connect(cfg.Nats.URL, opts...)

@@ -105,10 +105,10 @@ func (s *Svc) publish(smss ...models.SMS) {
 
 			if err := s.producer.Publish(s.cfg.Producer.Subjects[0], byteSms, sms.ID); err != nil {
 				sms.Status = consts.PendingStatus
-				log.Printf("pending: [%v]", sms.ID)
+				//log.Printf("pending: [%v]", sms.ID)
 			} else {
 				sms.Status = consts.PublishedStatus
-				log.Printf("published: [%v]", sms.ID)
+				//log.Printf("published: [%v]", sms.ID)
 			}
 
 			mu.Lock()

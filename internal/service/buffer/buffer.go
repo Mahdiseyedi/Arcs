@@ -24,9 +24,8 @@ func NewStatusFlusher(
 	repo *sms.Repository,
 ) *StatusFlusher {
 	sf := &StatusFlusher{
-		updates: make(chan models.StatusUpdate, 10000),
-		//flushInterval: time.Duration(cfg.Delivery.BufferFlushInterval),
-		flushInterval: time.Second,
+		updates:       make(chan models.StatusUpdate, 10000),
+		flushInterval: time.Duration(cfg.Delivery.BufferFlushInterval) * time.Second,
 		repo:          repo,
 		shutdown:      make(chan struct{}),
 	}
@@ -53,13 +52,13 @@ func (sf *StatusFlusher) run() {
 				buffer = buffer[:0]
 			}
 		case <-ticker.C:
-			log.Printf("flush interval reached%v", len(sf.updates))
+			//log.Printf("flush interval reached%v", len(sf.updates))
 			if len(buffer) > 0 {
 				sf.flush(buffer)
 				buffer = buffer[:0]
 			}
 		case <-sf.shutdown:
-			log.Printf("flush shutdown %v", len(sf.updates))
+			//log.Printf("flush shutdown %v", len(sf.updates))
 			if len(buffer) > 0 {
 				sf.flush(buffer)
 			}
@@ -71,9 +70,9 @@ func (sf *StatusFlusher) run() {
 func (sf *StatusFlusher) Add(update models.StatusUpdate) {
 	select {
 	case sf.updates <- update:
-		log.Printf("added new status update to buffer :%v", update)
+		//log.Printf("added new status update to buffer :%v", update)
 	default:
-		log.Println("status update full dropping update...")
+		//log.Println("status update full dropping update...")
 	}
 }
 
@@ -86,7 +85,6 @@ func (sf *StatusFlusher) flush(buffer []models.StatusUpdate) {
 	if len(buffer) == 0 {
 		return
 	}
-	log.Printf("[BUFFER] flushing %d updates...", len(buffer))
 
 	if err := sf.repo.BulkUpdate(context.Background(), buffer); err != nil {
 		log.Printf("failed to flush: %v", err)

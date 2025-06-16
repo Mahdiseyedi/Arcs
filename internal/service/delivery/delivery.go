@@ -5,7 +5,7 @@ import (
 	"arcs/internal/models"
 	"arcs/internal/service/buffer"
 	consts "arcs/internal/utils/const"
-	"log"
+	"context"
 	"math/rand"
 )
 
@@ -24,22 +24,22 @@ func NewDeliveryService(
 	}
 }
 
-func (s *Svc) SendSMS(sms models.SMS) error {
+func (s *Svc) SendSMS(ctx context.Context, sms models.SMS) error {
 	suc := rand.Float32() < float32(s.cfg.Delivery.SuccessRate)/100
 
 	if suc {
-		log.Printf("[DELIVERY] SMS delivered: [%v]-[%v]", sms.Destination, sms.Order.Content)
+		//log.Printf("[DELIVERY] SMS delivered: [%v]-[%v]", sms.Destination, sms.Order.Content)
 		s.flusher.Add(models.StatusUpdate{
 			ID:     sms.ID,
 			Status: consts.DeliveredStatus,
 		})
 	} else {
-		log.Printf("[DELIVERY] SMS failed: [%v]-[%v]", sms.Destination, sms.Order.Content)
+		//log.Printf("[DELIVERY] SMS failed: [%v]-[%v]", sms.Destination, sms.Order.Content)
 		s.flusher.Add(models.StatusUpdate{
 			ID:     sms.ID,
 			Status: consts.FailedStatus,
 		})
 	}
-	
+
 	return nil
 }

@@ -3,3 +3,14 @@
 18. write a document
 19. replace json serialize with protobuf
 20.refund user after fail sms
+
+
+100_000_000 -> request per day
+day -> 86400 sec
+
+=> request per sec -> 10^9 / 86400 = 1158
+
+approximately we deploy 5 instance worker
+they should handle 1158 / 5 = 232 rps
+
+ill fine tune intervals and batch size according this Statistics

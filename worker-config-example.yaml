@@ -1,11 +1,16 @@
+basic:
+  time-zone: Asia/Tehran
+  #  environment: dev
+  environment: prod
+
 database:
   connection_string: host=localhost port=5440 user=admin dbname=arcs password=pass sslmode=disable TimeZone=Asia/Tehran
 
-nats:
+consumer:
   url: localhost:4222
-  client-timeout: 5
-  reconnect-wait: 3
-  max-reconnects: 3
+  client-timeout: 2
+  reconnect-wait: 2
+  max-reconnects: -1
   retry-timeout: 10
   stream: sms
   queue: sends
@@ -13,4 +18,5 @@ nats:
     - senders
 
 delivery:
-  success-rate: 90
+  success-rate: 50
+  buffer-flush-interval: 60

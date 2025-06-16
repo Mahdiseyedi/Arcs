@@ -2,3 +2,4 @@
 2. adding volume to compose
 8. clarify worker
 18. write a document
+19. replace json serialize with protobuf

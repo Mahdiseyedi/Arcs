@@ -1,0 +1,13 @@
+nats:
+  url: localhost:4222
+  client-timeout: 5
+  reconnect-wait: 3
+  max-reconnects: 3
+  retry-timeout: 10
+  stream: sms
+  queue: sends
+  subjects:
+    - senders
+
+delivery:
+  success-rate: 90

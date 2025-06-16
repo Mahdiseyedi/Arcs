@@ -1,6 +1,7 @@
 package main
 
 import (
+	"arcs/internal/clients/mock"
 	natsCli "arcs/internal/clients/nats"
 	"arcs/internal/configs"
 	"arcs/internal/models"
@@ -14,10 +15,14 @@ func main() {
 	cfg := configs.Load("../../worker-config.yaml")
 	time.Local, _ = time.LoadLocation(cfg.Basic.TimeZone)
 
+	//clients
 	natsClient := natsCli.NewNatsClient(cfg)
-	_ = natsClient.EnsureStream()
+	mockDelivery := mock.NewMockDelivery(cfg)
 
 	for {
+		if !mockDelivery.SendSMS(models.SMS{}) {
+			log.Println("false")
+		}
 		if err := natsClient.Consume(cfg.Nats.Subjects[0], createMessageHandler()); err != nil {
 			log.Printf("[CONSUMER] Failed to consume message: %v", err)
 			time.Sleep(1 * time.Second)
@@ -38,6 +43,6 @@ func createMessageHandler() nats.MsgHandler {
 
 		msg.Ack() // manual ack
 
-		log.Printf("Processed: [%s] - [%s] - [%s]\n", sms.ID, sms.Destination, sms.Order.Content)
+		log.Printf("Processed: [%v]\n", sms)
 	}
 }

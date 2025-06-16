@@ -28,10 +28,10 @@ func (s *Svc) SendSMS(ctx context.Context, sms models.SMS) error {
 	suc := rand.Float32() < float32(s.cfg.Delivery.SuccessRate)/100
 
 	if suc {
-		log.Printf("[DELIVERY] SMS delivered: [%v]", sms)
+		log.Printf("[DELIVERY] SMS delivered: [%v]-[%v]", sms.Destination, sms.Order.Content)
 		return s.smsRepo.MarkDelivered(ctx, sms.ID)
 	} else {
-		log.Printf("[DELIVERY] SMS failed: [%v]", sms)
+		log.Printf("[DELIVERY] SMS failed: [%v]-[%v]", sms.Destination, sms.Order.Content)
 		return s.smsRepo.MarkFailed(ctx, sms.ID)
 	}
 }

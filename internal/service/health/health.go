@@ -1,27 +1,27 @@
 package health
 
 import (
-	natsCli "arcs/internal/clients/nats"
+	"arcs/internal/clients/nats/producer"
 	"context"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
 
 type Svc struct {
-	gDB        *gorm.DB
-	redisCli   *redis.Client
-	natsClient *natsCli.Client
+	gDB      *gorm.DB
+	redisCli *redis.Client
+	producer *producer.Producer
 }
 
 func NewHealthSvc(
 	db *gorm.DB,
 	redisCli *redis.Client,
-	natsClient *natsCli.Client,
+	producer *producer.Producer,
 ) *Svc {
 	return &Svc{
-		gDB:        db,
-		redisCli:   redisCli,
-		natsClient: natsClient,
+		gDB:      db,
+		redisCli: redisCli,
+		producer: producer,
 	}
 }
 
@@ -39,5 +39,5 @@ func (s *Svc) RedisHealthCheck(ctx context.Context) error {
 }
 
 func (s *Svc) NatsHealthCheck(ctx context.Context) error {
-	return s.natsClient.HealthCheck()
+	return s.producer.HealthCheck()
 }

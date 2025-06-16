@@ -2,7 +2,7 @@ package main
 
 import (
 	"arcs/internal/clients/db"
-	"arcs/internal/clients/nats"
+	"arcs/internal/clients/nats/producer"
 	"arcs/internal/clients/redis"
 	"arcs/internal/configs"
 	"arcs/internal/delivery/http"
@@ -33,8 +33,8 @@ func main() {
 	dbCli := db.NewDatabase(cfg)
 	redisCli := redis.NewRedisCli(cfg)
 	lockCli := lock.NewLock(cfg, redisCli)
-	natsCli := nats.NewNatsClient(cfg)
-	defer natsCli.Close()
+	ProducerCli := producer.NewProducerClient(cfg)
+	defer ProducerCli.Close()
 
 	//repos
 	userRepo := userRepository.NewUserRepository(dbCli)
@@ -44,8 +44,8 @@ func main() {
 
 	//services
 	userSvc := userService.NewUserSvc(userRepo, smsRepo)
-	orderSvc := orderService.NewOrderSvc(cfg, userSvc, orderRepo, smsRepo, natsCli, lockCli)
-	healthSvc := health.NewHealthSvc(dbCli.DB, redisCli.Client, natsCli)
+	orderSvc := orderService.NewOrderSvc(cfg, userSvc, orderRepo, smsRepo, ProducerCli, lockCli)
+	healthSvc := health.NewHealthSvc(dbCli.DB, redisCli.Client, ProducerCli)
 
 	//validator
 	userVal := userValidator.NewUserValidator()
@@ -57,7 +57,7 @@ func main() {
 	orderHandle := orderHandler.NewOrderHandler(orderVal, orderSvc)
 
 	//jobs
-	crn.C.AddFunc(fmt.Sprintf("@every %ds", cfg.Nats.RetryTimeOut), func() {
+	crn.C.AddFunc(fmt.Sprintf("@every %ds", cfg.Producer.RetryTimeOut), func() {
 		orderSvc.RecoverUnPblishSMS()
 	})
 

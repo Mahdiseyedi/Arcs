@@ -1,6 +1,6 @@
-package nats
+package consumer
 
-type Nats struct {
+type Consumer struct {
 	URL           string   `koanf:"url"`
 	ClientTimeout int      `koanf:"client-timeout"`
 	ReconnectWait int      `koanf:"reconnect-wait"`

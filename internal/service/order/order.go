@@ -1,7 +1,7 @@
 package order
 
 import (
-	"arcs/internal/clients/nats"
+	"arcs/internal/clients/nats/producer"
 	"arcs/internal/configs"
 	"arcs/internal/dto"
 	"arcs/internal/lock"
@@ -20,12 +20,12 @@ import (
 )
 
 type Svc struct {
-	cfg        configs.Config
-	userSvc    *userSvc.Svc
-	orderRepo  *order.Repository
-	smsRepo    *sms.Repository
-	natsClient *nats.Client
-	lock       *lock.Lock
+	cfg       configs.Config
+	userSvc   *userSvc.Svc
+	orderRepo *order.Repository
+	smsRepo   *sms.Repository
+	producer  *producer.Producer
+	lock      *lock.Lock
 }
 
 func NewOrderSvc(
@@ -33,16 +33,16 @@ func NewOrderSvc(
 	userSvc *userSvc.Svc,
 	orderRepo *order.Repository,
 	smsRepo *sms.Repository,
-	natsClient *nats.Client,
+	producer *producer.Producer,
 	lock *lock.Lock,
 ) *Svc {
 	return &Svc{
-		cfg:        cfg,
-		userSvc:    userSvc,
-		orderRepo:  orderRepo,
-		smsRepo:    smsRepo,
-		natsClient: natsClient,
-		lock:       lock,
+		cfg:       cfg,
+		userSvc:   userSvc,
+		orderRepo: orderRepo,
+		smsRepo:   smsRepo,
+		producer:  producer,
+		lock:      lock,
 	}
 }
 
@@ -89,7 +89,7 @@ func (s *Svc) RegisterOrder(ctx context.Context, req dto.OrderRequest) error {
 }
 
 func (s *Svc) publish(smss ...models.SMS) {
-	_ = s.natsClient.EnsureStream()
+	_ = s.producer.EnsureStream()
 	var (
 		publishedSms []models.SMS
 		mu           sync.Mutex
@@ -103,7 +103,7 @@ func (s *Svc) publish(smss ...models.SMS) {
 			//TODO - replace me with protobuf
 			byteSms, _ := json.Marshal(sms)
 
-			if err := s.natsClient.Publish(s.cfg.Nats.Subjects[0], byteSms, sms.ID); err != nil {
+			if err := s.producer.Publish(s.cfg.Producer.Subjects[0], byteSms, sms.ID); err != nil {
 				sms.Status = consts.PendingStatus
 				log.Printf("pending: [%v]", sms.ID)
 			} else {
@@ -126,7 +126,7 @@ func (s *Svc) publish(smss ...models.SMS) {
 
 func (s *Svc) RecoverUnPblishSMS() {
 	//avoid republish if nats not came up
-	if nerr := s.natsClient.HealthCheck(); nerr != nil {
+	if nerr := s.producer.HealthCheck(); nerr != nil {
 		return
 	}
 
@@ -181,7 +181,7 @@ func (s *Svc) RecoverUnPblishSMS() {
 }
 
 func (s *Svc) rePublish(smss ...models.SMS) {
-	_ = s.natsClient.EnsureStream()
+	_ = s.producer.EnsureStream()
 
 	var (
 		publishedSms []models.SMS
@@ -197,7 +197,7 @@ func (s *Svc) rePublish(smss ...models.SMS) {
 			//TODO - replace me with protobuf
 			byteSms, _ := json.Marshal(sms)
 
-			if err := s.natsClient.Publish(s.cfg.Nats.Subjects[0], byteSms, sms.ID); err != nil {
+			if err := s.producer.Publish(s.cfg.Producer.Subjects[0], byteSms, sms.ID); err != nil {
 				log.Printf("pending: [%v]", sms.ID)
 			} else {
 				log.Printf("published: [%v]", sms.ID)

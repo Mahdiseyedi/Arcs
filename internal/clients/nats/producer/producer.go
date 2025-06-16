@@ -19,7 +19,7 @@ func NewProducerClient(cfg configs.Config) *Producer {
 		nats.Timeout(time.Duration(cfg.Producer.ClientTimeout) * time.Second),
 		nats.ReconnectWait(time.Duration(cfg.Producer.ReconnectWait) * time.Second),
 		nats.MaxReconnects(cfg.Producer.MaxReconnects),
-		nats.ReconnectBufSize(-1), // this one disable buffer on local clients
+		//nats.ReconnectBufSize(-1), // this one disable buffer on local clients
 	}
 
 	nc, err := nats.Connect(cfg.Producer.URL, opts...)

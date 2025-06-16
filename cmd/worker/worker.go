@@ -49,10 +49,9 @@ func main() {
 		os.Exit(0)
 	}()
 
-	for {
-		if err := consumerCli.Consume(cfg.Consumer.Subjects[0], handler.Handle(ctx)); err != nil {
-			log.Printf("[CONSUMER] Failed to consume message: %v", err)
-			time.Sleep(1 * time.Second)
-		}
+	if err := consumerCli.Consume(cfg.Consumer.Subjects[0], handler.Handle(ctx)); err != nil {
+		log.Printf("[CONSUMER] Failed to consume message: %v", err)
 	}
+
+	select {}
 }

@@ -22,6 +22,7 @@ func (s *SMSHandler) Handle(ctx context.Context) nats.MsgHandler {
 		var sms models.SMS
 		if err := json.Unmarshal(msg.Data, &sms); err != nil {
 			log.Printf("falied to marshal: [%v]", err)
+			msg.Nak()
 			return
 		}
 

@@ -64,7 +64,15 @@ func (c *Consumer) Close() {
 }
 
 func (c *Consumer) Consume(topic string, handler nats.MsgHandler) error {
-	if _, err := c.js.QueueSubscribe(topic, c.cfg.Consumer.Queue, handler, nats.ManualAck()); err != nil {
+	if _, err := c.js.QueueSubscribe(
+		topic,
+		c.cfg.Consumer.Queue,
+		handler,
+		nats.Durable(c.cfg.Consumer.Queue),
+		nats.ManualAck(),
+		nats.AckExplicit(),
+		nats.MaxDeliver(5),
+	); err != nil {
 		return fmt.Errorf("[NATS] Failed to consume msg: %v", err)
 	}
 

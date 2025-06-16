@@ -94,3 +94,17 @@ func (r *Repository) GetUserSMS(ctx context.Context, userID string, filters mode
 
 	return smsList, total, nil
 }
+
+func (r *Repository) MarkDelivered(ctx context.Context, smsID string) error {
+	return r.db.DB.WithContext(ctx).
+		Model(&models.SMS{}).
+		Where("id = ?", smsID).
+		Update("status", consts.DeliveredStatus).Error
+}
+
+func (r *Repository) MarkFailed(ctx context.Context, smsID string) error {
+	return r.db.DB.WithContext(ctx).
+		Model(&models.SMS{}).
+		Where("id = ?", smsID).
+		Update("status", consts.FailedStatus).Error
+}

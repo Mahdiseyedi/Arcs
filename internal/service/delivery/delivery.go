@@ -3,35 +3,43 @@ package delivery
 import (
 	"arcs/internal/configs"
 	"arcs/internal/models"
-	"arcs/internal/repository/sms"
-	"context"
+	"arcs/internal/service/buffer"
+	consts "arcs/internal/utils/const"
 	"log"
 	"math/rand"
 )
 
 type Svc struct {
 	cfg     configs.Config
-	smsRepo *sms.Repository
+	flusher *buffer.StatusFlusher
 }
 
 func NewDeliveryService(
 	cfg configs.Config,
-	smsRepo *sms.Repository,
+	flusher *buffer.StatusFlusher,
 ) *Svc {
 	return &Svc{
 		cfg:     cfg,
-		smsRepo: smsRepo,
+		flusher: flusher,
 	}
 }
 
-func (s *Svc) SendSMS(ctx context.Context, sms models.SMS) error {
+func (s *Svc) SendSMS(sms models.SMS) error {
 	suc := rand.Float32() < float32(s.cfg.Delivery.SuccessRate)/100
 
 	if suc {
 		log.Printf("[DELIVERY] SMS delivered: [%v]-[%v]", sms.Destination, sms.Order.Content)
-		return s.smsRepo.MarkDelivered(ctx, sms.ID)
+		s.flusher.Add(models.StatusUpdate{
+			ID:     sms.ID,
+			Status: consts.DeliveredStatus,
+		})
 	} else {
 		log.Printf("[DELIVERY] SMS failed: [%v]-[%v]", sms.Destination, sms.Order.Content)
-		return s.smsRepo.MarkFailed(ctx, sms.ID)
+		s.flusher.Add(models.StatusUpdate{
+			ID:     sms.ID,
+			Status: consts.FailedStatus,
+		})
 	}
+	
+	return nil
 }

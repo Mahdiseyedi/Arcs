@@ -6,9 +6,13 @@ import (
 	"arcs/internal/configs"
 	"arcs/internal/handler/worker"
 	"arcs/internal/repository/sms"
+	"arcs/internal/service/buffer"
 	"arcs/internal/service/delivery"
 	"context"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 )
 
@@ -28,10 +32,22 @@ func main() {
 	smsRepo := sms.NewSMSRepository(cfg, dbCli)
 
 	//service
-	deliveryService := delivery.NewDeliveryService(cfg, smsRepo)
+	flusher := buffer.NewStatusFlusher(cfg, smsRepo)
+	deliveryService := delivery.NewDeliveryService(cfg, flusher)
 
 	//Handlers
 	handler := worker.NewSMSHandler(deliveryService)
+
+	//gracefully shutdown
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		<-sigs
+		log.Println("Shutting down...")
+		cancel()
+		flusher.Stop()
+		os.Exit(0)
+	}()
 
 	for {
 		if err := consumerCli.Consume(cfg.Consumer.Subjects[0], handler.Handle(ctx)); err != nil {

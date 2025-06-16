@@ -6,6 +6,8 @@ import (
 	"arcs/internal/models"
 	consts "arcs/internal/utils/const"
 	"context"
+	"fmt"
+	"strings"
 	"time"
 )
 
@@ -107,4 +109,35 @@ func (r *Repository) MarkFailed(ctx context.Context, smsID string) error {
 		Model(&models.SMS{}).
 		Where("id = ?", smsID).
 		Update("status", consts.FailedStatus).Error
+}
+
+/*
+ sample query :
+	UPDATE sms SET status = CASE id WHEN '134a384f-08e5-487b-af22-da1937c3f0bf'
+	THEN 'delivered' END WHERE id IN ('134a384f-08e5-487b-af22-da1937c3f0bf');
+*/
+
+func (r *Repository) BulkUpdate(ctx context.Context, updates []models.StatusUpdate) error {
+	if len(updates) == 0 {
+		return nil
+	}
+
+	q := "CASE id"
+	ids := make([]interface{}, 0, len(updates))
+	args := make([]interface{}, 0, len(updates)*2)
+
+	for _, upd := range updates {
+		q += fmt.Sprintf(" WHEN ? THEN ?")
+		args = append(args, upd.ID, upd.Status)
+		ids = append(ids, upd.ID)
+	}
+
+	q += " END"
+
+	placeHolders := strings.TrimRight(strings.Repeat("?,", len(ids)), ",")
+
+	query := fmt.Sprintf("UPDATE sms SET status = %s WHERE id IN (%s)", q, placeHolders)
+	args = append(args, ids...)
+
+	return r.db.DB.WithContext(ctx).Exec(query, args...).Error
 }

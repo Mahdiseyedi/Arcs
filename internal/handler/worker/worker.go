@@ -1,11 +1,10 @@
 package worker
 
 import (
-	"arcs/internal/models"
+	pb "arcs/internal/models/proto"
 	"arcs/internal/service/delivery"
-	"context"
-	"encoding/json"
 	"github.com/nats-io/nats.go"
+	"google.golang.org/protobuf/proto"
 )
 
 type SMSHandler struct {
@@ -16,17 +15,16 @@ func NewSMSHandler(deliverySvc *delivery.Svc) *SMSHandler {
 	return &SMSHandler{deliverySvc: deliverySvc}
 }
 
-func (s *SMSHandler) Handle(ctx context.Context) nats.MsgHandler {
+func (s *SMSHandler) Handle() nats.MsgHandler {
 	return func(msg *nats.Msg) {
-		var sms models.SMS
-		if err := json.Unmarshal(msg.Data, &sms); err != nil {
-			//log.Printf("falied to marshal: [%v]", err)
+		var sms pb.SMS
+
+		if err := proto.Unmarshal(msg.Data, &sms); err != nil {
 			msg.Nak()
 			return
 		}
-
-		if err := s.deliverySvc.SendSMS(ctx, sms); err != nil {
-			//log.Printf("delivery falied: [%v]", err)
+		
+		if err := s.deliverySvc.SendSMS(&sms); err != nil {
 			msg.Nak()
 			return
 		}

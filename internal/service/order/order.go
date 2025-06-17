@@ -11,9 +11,9 @@ import (
 	userSvc "arcs/internal/service/user"
 	consts "arcs/internal/utils/const"
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
+	"google.golang.org/protobuf/proto"
 	"log"
 	"sync"
 	"time"
@@ -100,8 +100,8 @@ func (s *Svc) publish(smss ...models.SMS) {
 		go func() {
 			defer wg.Done()
 
-			//TODO - replace me with protobuf
-			byteSms, _ := json.Marshal(sms)
+			pSms := sms.ToProto()
+			byteSms, _ := proto.Marshal(pSms)
 
 			if err := s.producer.Publish(s.cfg.Producer.Subjects[0], byteSms, sms.ID); err != nil {
 				sms.Status = consts.PendingStatus
@@ -195,7 +195,8 @@ func (s *Svc) rePublish(smss ...models.SMS) {
 			defer wg.Done()
 
 			//TODO - replace me with protobuf
-			byteSms, _ := json.Marshal(sms)
+			pSms := sms.ToProto()
+			byteSms, _ := proto.Marshal(pSms)
 
 			if err := s.producer.Publish(s.cfg.Producer.Subjects[0], byteSms, sms.ID); err != nil {
 				log.Printf("pending: [%v]", sms.ID)

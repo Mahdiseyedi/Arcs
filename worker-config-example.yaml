@@ -19,4 +19,4 @@ consumer:
 
 delivery:
   success-rate: 50
-  buffer-flush-interval: 1
+  buffer-flush-interval: 500

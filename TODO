@@ -5,6 +5,9 @@
 20.refund user after fail sms
 
 
+sample api report :
+127.0.01:8088/api/v1/user/c39d2093-73cd-4c9d-8d36-33a0f4ae0924/sms?status=failed&page=1&page_size=90&start_date=2025-06-15T12:20:00Z&end_date=2025-06-17T23:02:30Z
+
 100_000_000 -> request per day
 day -> 86400 sec
 

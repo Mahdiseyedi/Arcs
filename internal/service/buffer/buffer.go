@@ -25,7 +25,7 @@ func NewStatusFlusher(
 ) *StatusFlusher {
 	sf := &StatusFlusher{
 		updates:       make(chan models.StatusUpdate, 10000),
-		flushInterval: time.Duration(cfg.Delivery.BufferFlushInterval) * time.Second,
+		flushInterval: time.Duration(cfg.Delivery.BufferFlushInterval) * time.Millisecond,
 		repo:          repo,
 		shutdown:      make(chan struct{}),
 	}

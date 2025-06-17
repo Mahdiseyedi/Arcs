@@ -68,10 +68,11 @@ func (c *Consumer) Consume(topic string, handler nats.MsgHandler) error {
 		topic,
 		c.cfg.Consumer.Queue,
 		handler,
-		nats.Durable(c.cfg.Consumer.Queue),
-		nats.ManualAck(),
+		nats.MaxAckPending(1),
 		nats.AckExplicit(),
-		nats.MaxDeliver(5),
+		nats.ManualAck(),
+		nats.Durable(c.cfg.Consumer.Queue),
+		//nats.MaxDeliver(5),
 	); err != nil {
 		return fmt.Errorf("[NATS] Failed to consume msg: %v", err)
 	}

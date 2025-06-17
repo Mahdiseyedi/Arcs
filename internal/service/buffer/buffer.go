@@ -24,7 +24,7 @@ func NewStatusFlusher(
 	repo *sms.Repository,
 ) *StatusFlusher {
 	sf := &StatusFlusher{
-		updates:       make(chan models.StatusUpdate, 10000),
+		updates:       make(chan models.StatusUpdate, 80000),
 		flushInterval: time.Duration(cfg.Delivery.BufferFlushInterval) * time.Millisecond,
 		repo:          repo,
 		shutdown:      make(chan struct{}),
@@ -41,18 +41,17 @@ func (sf *StatusFlusher) run() {
 	ticker := time.NewTicker(sf.flushInterval)
 	defer ticker.Stop()
 
-	buffer := make([]models.StatusUpdate, 0, 100)
+	buffer := make([]models.StatusUpdate, 0, 14000)
 
 	for {
 		select {
 		case update := <-sf.updates:
 			buffer = append(buffer, update)
-			if len(buffer) >= 100 {
+			if len(buffer) >= 7000 {
 				sf.flush(buffer)
 				buffer = buffer[:0]
 			}
 		case <-ticker.C:
-			//log.Printf("flush interval reached%v", len(sf.updates))
 			if len(buffer) > 0 {
 				sf.flush(buffer)
 				buffer = buffer[:0]
@@ -72,7 +71,7 @@ func (sf *StatusFlusher) Add(update models.StatusUpdate) {
 	case sf.updates <- update:
 		//log.Printf("added new status update to buffer :%v", update)
 	default:
-		//log.Println("status update full dropping update...")
+		log.Printf("status update full dropping update..., [%v]\n", update.ID)
 	}
 }
 

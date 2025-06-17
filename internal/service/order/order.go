@@ -36,6 +36,7 @@ func NewOrderSvc(
 	producer *producer.Producer,
 	lock *lock.Lock,
 ) *Svc {
+	_ = producer.EnsureStream()
 	return &Svc{
 		cfg:       cfg,
 		userSvc:   userSvc,
@@ -89,7 +90,6 @@ func (s *Svc) RegisterOrder(ctx context.Context, req dto.OrderRequest) error {
 }
 
 func (s *Svc) publish(smss ...models.SMS) {
-	_ = s.producer.EnsureStream()
 	var (
 		publishedSms []models.SMS
 		mu           sync.Mutex

@@ -51,7 +51,6 @@ func main() {
 
 	//TODO - remove me
 	consumerCli.EnsureStream()
-
 	if err := consumerCli.Consume(cfg.Consumer.Subjects[0], handler.Handle(ctx)); err != nil {
 		log.Printf("[CONSUMER] Failed to consume message: %v", err)
 	}

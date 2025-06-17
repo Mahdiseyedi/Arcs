@@ -17,3 +17,11 @@ approximately we deploy 5 instance worker
 they should handle 1158 / 5 = 232 rps
 
 ill fine tune intervals and batch size according this Statistics
+
+
+max load that i handle in my local host dockerless and json serializer:
+go run loadtest.go scenario1 -balance 1000 -destinations 10 -rate 110 -duration 60s
+
+Scenario 1 Results:
+Success: 6599, Failures: 0
+Elapsed: 1m0.017765649s, RPS: 109.95

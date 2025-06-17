@@ -27,6 +27,7 @@ func (s *SMSHandler) Handle(ctx context.Context) nats.MsgHandler {
 
 		if err := s.deliverySvc.SendSMS(ctx, sms); err != nil {
 			//log.Printf("delivery falied: [%v]", err)
+			msg.Nak()
 			return
 		}
 

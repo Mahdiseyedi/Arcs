@@ -138,6 +138,6 @@ func (r *Repository) BulkUpdate(ctx context.Context, updates []models.StatusUpda
 
 	query := fmt.Sprintf("UPDATE sms SET status = %s WHERE id IN (%s)", q, placeHolders)
 	args = append(args, ids...)
-
+	
 	return r.db.DB.WithContext(ctx).Exec(query, args...).Error
 }

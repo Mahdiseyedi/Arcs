@@ -4,10 +4,10 @@ basic:
   environment: prod
 
 database:
-  connection_string: host=localhost port=5440 user=admin dbname=arcs password=pass sslmode=disable TimeZone=Asia/Tehran
+  connection_string: host=arcs-db port=5432 user=admin dbname=arcs password=pass sslmode=disable
 
 consumer:
-  url: localhost:4222
+  url: nats:4222
   client-timeout: 2
   reconnect-wait: 2
   max-reconnects: -1
@@ -18,5 +18,5 @@ consumer:
     - senders
 
 delivery:
-  success-rate: 50
-  buffer-flush-interval: 500
+  success-rate: 80
+  buffer-flush-interval: 1500

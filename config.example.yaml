@@ -3,20 +3,20 @@ basic:
   port: 8088
   environment: prod
   #  Environment: dev
-  insert-batch-size: 500
+  insert-batch-size: 100
   pending-process-batch-size: 1000
   republish-lock-duration: 5
 
 database:
-  connection_string: host=localhost port=5440 user=admin dbname=arcs password=pass sslmode=disable TimeZone=Asia/Tehran
+  connection_string: host=arcs-db port=5432 user=admin dbname=arcs password=pass sslmode=disable
 
 redis:
-  addr: localhost:6380
+  addr: redis:6379
   password: pass
   db: 0
 
 producer:
-  url: localhost:4222
+  url: nats:4222
   client-timeout: 2
   reconnect-wait: 5
   max-reconnects: -1

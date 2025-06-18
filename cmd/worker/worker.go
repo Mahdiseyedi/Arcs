@@ -13,7 +13,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 )
 
 func main() {
@@ -21,7 +20,7 @@ func main() {
 	defer cancel()
 
 	cfg := configs.Load("/config/worker-config.yaml")
-	time.Local, _ = time.LoadLocation(cfg.Basic.TimeZone)
+	//time.Local, _ = time.LoadLocation(cfg.Basic.TimeZone)
 
 	//clients
 	dbCli := db.NewDatabase(cfg)

@@ -12,7 +12,12 @@ services:
       POSTGRESQL_DATABASE: arcs
       POSTGRESQL_TIMEZONE: Asia/Tehran
     ports:
-      - "5440:5432"
+      - "5432:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U admin -d arcs" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: docker.arvancloud.ir/bitnami/redis:8.0.2
@@ -24,12 +29,42 @@ services:
       REDIS_PASSWORD: pass
       ALLOW_EMPTY_PASSWORD: "no"
     ports:
-      - "6380:6379"
+      - "6379:6379"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "-a", "pass", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   nats:
 #    image: nats:2.11.4
     image: docker.arvancloud.ir/nats:2.11.4
     container_name: nats
+    restart: always
     command: ["-js"]
     ports:
       - "4222:4222"
+
+  manager:
+    build:
+      context: .
+      dockerfile: Dockerfile.manager
+    container_name: manager
+    restart: always
+    ports:
+      - '8088:8088'
+    depends_on:
+      arcs-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    volumes:
+      - /home/mahdi/Projects/Arcs/config.yaml:/config/config.yaml
+    healthcheck:
+      test: wget -qO- http://localhost:8088/health || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s

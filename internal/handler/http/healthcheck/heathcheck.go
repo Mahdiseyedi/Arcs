@@ -3,6 +3,7 @@ package healthcheck
 import (
 	"arcs/internal/service/health"
 	"github.com/gin-gonic/gin"
+	"log"
 	"net/http"
 )
 
@@ -20,11 +21,13 @@ func NewHealthcheckHandler(
 
 func (h *Handler) Check(c *gin.Context) {
 	if err := h.svc.DBHealthCheck(c.Request.Context()); err != nil {
+		log.Printf("Db health check failed: %v", err)
 		c.Status(http.StatusServiceUnavailable)
 		return
 	}
 
 	if err := h.svc.RedisHealthCheck(c.Request.Context()); err != nil {
+		log.Printf("Redis health check failed: %v", err)
 		c.Status(http.StatusServiceUnavailable)
 		return
 	}

@@ -33,10 +33,11 @@ func NewServer(
 
 func (s *Server) Run() {
 	gin.SetMode(gin.ReleaseMode)
-	r := gin.Default()
+	r := gin.New()
 
 	//health
 	r.GET("/health", s.heathHandler.Check)
+	r.Use(gin.Logger(), gin.Recovery())
 
 	//api version 1
 	api := r.Group("/api/v1")

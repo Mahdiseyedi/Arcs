@@ -20,7 +20,7 @@ func main() {
 	_, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	cfg := configs.Load("../../worker-config.yaml")
+	cfg := configs.Load("/config/worker-config.yaml")
 	time.Local, _ = time.LoadLocation(cfg.Basic.TimeZone)
 
 	//clients
@@ -49,7 +49,6 @@ func main() {
 		os.Exit(0)
 	}()
 
-	//TODO - remove me
 	consumerCli.EnsureStream()
 	if err := consumerCli.Consume(cfg.Consumer.Subjects[0], handler.Handle()); err != nil {
 		log.Printf("[CONSUMER] Failed to consume message: %v", err)

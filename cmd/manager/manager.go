@@ -20,13 +20,12 @@ import (
 	orderValidator "arcs/internal/validator/order"
 	userValidator "arcs/internal/validator/user"
 	"fmt"
-	"time"
 )
 
 func main() {
-	cfg := configs.Load("../../config.yaml")
+	cfg := configs.Load("/config/config.yaml")
 
-	time.Local, _ = time.LoadLocation(cfg.Basic.TimeZone)
+	//time.Local, _ = time.LoadLocation(cfg.Basic.TimeZone)
 
 	//clients
 	crn := jobs.NewCronJob()

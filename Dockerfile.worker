@@ -1,12 +1,9 @@
-# build stage
 FROM docker.arvancloud.ir/golang:1.24-alpine AS builder
 
 WORKDIR /app
 
 COPY go.mod go.sum ./
-COPY vendor/ ./vendor/
-ENV GOFLAGS=-mod=vendor
-#RUN go mod download
+RUN go mod download
 
 COPY . .
 COPY worker-config.yaml /config/worker-config.yaml
@@ -16,8 +13,6 @@ RUN go build -o worker ./cmd/worker
 FROM docker.arvancloud.ir/alpine:3.22.0
 
 WORKDIR /app
-
-#RUN apk add --no-cache tzdata
 
 COPY --from=builder /app/worker ./
 COPY --from=builder /config/worker-config.yaml /config/worker-config.yaml

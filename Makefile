@@ -35,5 +35,5 @@ else
 	docker exec -it arcs-redis redis-cli
 endif
 
-load-1:
-	go run cmd/loadtest/loadtest.go scenario1 -balance 1000 -destinations 10 -rate 110 -duration 60s
+load-1-%:
+	go run cmd/loadtest/loadtest.go scenario1 -balance 1000 -destinations 10 -rate $* -duration 60s

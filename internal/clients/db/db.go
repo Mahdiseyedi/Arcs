@@ -23,7 +23,7 @@ func NewDatabase(cfg configs.Config) (DB *Database) {
 	}
 
 	db, err := gorm.Open(postgres.Open(cfg.DB.ConnectionString), &gorm.Config{
-		SkipDefaultTransaction: false,
+		SkipDefaultTransaction: true,
 		PrepareStmt:            true,
 		Logger:                 loger,
 	})
@@ -34,7 +34,7 @@ func NewDatabase(cfg configs.Config) (DB *Database) {
 	database := &Database{
 		DB: db,
 	}
-	
+
 	database.autoMigrate()
 
 	return database
